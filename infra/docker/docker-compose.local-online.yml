@@ -1,0 +1,109 @@
+# Option A local-online stack for Windows/WSL2 + Android emulator.
+# Why this file exists: `docker-compose.dev.yml` references minio/minio:latest
+# and minio/mc:latest, which are ARCHIVED on Docker Hub (pull returns
+# "access denied ... may require 'docker login'") and quay.io is unreachable
+# (401) from this network. This variant swaps MinIO for LocalStack S3
+# (already pullable: localstack/localstack:latest) and keeps everything else
+# identical (postgres 16, api, web). Original dev file is left untouched.
+#
+# Android-first URL choice: STORAGE_PUBLIC_BASE_URL=http://10.0.2.2:4566 so
+# presigned photo URLs work on the emulator (10.0.2.2 = host loopback).
+# Tradeoff: web photo preview from host browser will not load with that host;
+# API/web text flows are unaffected. Flip to http://localhost:4566 if you
+# demo photos on web instead.
+
+services:
+  postgres:
+    image: postgres:16.13-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: spotfix
+      POSTGRES_PASSWORD: spotfix
+      POSTGRES_DB: spotfix
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U spotfix -d spotfix"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  s3:
+    # Pinned to 2.3.2: :latest (2026.x) requires LOCALSTACK_AUTH_TOKEN license.
+    image: localstack/localstack:2.3.2
+    restart: unless-stopped
+    environment:
+      SERVICES: "s3"
+    ports:
+      - "4566:4566"
+    volumes:
+      - s3_data:/var/lib/localstack
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:4566/_localstack/health || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  s3-init:
+    image: localstack/localstack:2.3.2
+    depends_on:
+      s3:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+        for i in 1 2 3 4 5 6 7 8 9 10 11 12; do
+          if curl -sf http://s3:4566/_localstack/health >/dev/null; then break; fi;
+          echo \"waiting for s3... ($$i)\"; sleep 3;
+        done;
+        awslocal --endpoint-url=http://s3:4566 s3 mb s3://spotfix-photos 2>&1 || echo 'bucket exists or create deferred';
+        echo 's3 bucket ready'
+      "
+    restart: "no"
+
+  api:
+    build:
+      context: ../../apps/api
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      s3:
+        condition: service_healthy
+    environment:
+      PORT: "5001"
+      HOST: "0.0.0.0"
+      DATABASE_URL: "postgresql://spotfix:spotfix@postgres:5432/spotfix?schema=public"
+      JWT_SECRET: "${JWT_SECRET:-local-compose-jwt-secret-2026-change-me-before-sharing-7d91b5c4f2a8}"
+      JWT_EXPIRES_IN: "${JWT_EXPIRES_IN:-12h}"
+      JWT_REFRESH_EXPIRES_IN: "${JWT_REFRESH_EXPIRES_IN:-30d}"
+      STORAGE_ENDPOINT: "http://s3:4566"
+      STORAGE_REGION: "us-east-1"
+      STORAGE_BUCKET: "spotfix-photos"
+      STORAGE_ACCESS_KEY: "spotfix"
+      STORAGE_SECRET_KEY: "spotfix-dev-secret"
+      STORAGE_FORCE_PATH_STYLE: "true"
+      STORAGE_PUBLIC_BASE_URL: "http://10.0.2.2:4566"
+      CORS_ALLOWED_ORIGINS: "*"
+      GOOGLE_CLIENT_IDS: "${GOOGLE_CLIENT_IDS:-}"
+    ports:
+      - "5001:5001"
+
+  web:
+    build:
+      context: ../../apps/web
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      API_BASE_URL: "http://localhost:5001/api/v1"
+      TENANT_SLUG: "example-campus"
+      GOOGLE_CLIENT_IDS: "${GOOGLE_CLIENT_IDS:-}"
+      GOOGLE_CLIENT_ID: "${GOOGLE_CLIENT_ID:-}"
+    ports:
+      - "4173:80"
+
+volumes:
+  postgres_data:
+  s3_data:
