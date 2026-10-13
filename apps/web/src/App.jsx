@@ -77,7 +77,11 @@ const initialReport = {
 
 const runtimeConfig = window.__APP_CONFIG__ || {};
 const GOOGLE_CLIENT_ID = String(
-  runtimeConfig.GOOGLE_CLIENT_ID || import.meta.env.VITE_GOOGLE_CLIENT_ID || ''
+  runtimeConfig.GOOGLE_CLIENT_ID ||
+  runtimeConfig.GOOGLE_WEB_CLIENT_ID ||
+  import.meta.env.VITE_GOOGLE_CLIENT_ID ||
+  import.meta.env.VITE_GOOGLE_WEB_CLIENT_ID ||
+  ''
 ).trim();
 const PUBLIC_PENDING_STATUSES = new Set(['Reported']);
 const TOAST_ICONS = {

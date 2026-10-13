@@ -58,6 +58,11 @@ services:
       context: ../../apps/api
       dockerfile: Dockerfile
     restart: unless-stopped
+    env_file:
+      - path: ../../.env
+        required: false
+      - path: ../../apps/api/.env
+        required: false
     depends_on:
       postgres:
         condition: service_healthy
@@ -82,7 +87,8 @@ services:
       STORAGE_PUBLIC_BASE_URL: "http://localhost:9000"
       CORS_ALLOWED_ORIGINS: "*"
       # Google Sign-In ID token verification (iOS + Web/Android Credential Manager client IDs).
-      GOOGLE_CLIENT_IDS: "${GOOGLE_CLIENT_IDS:-}"
+      # P4: Web client ID for Google Identity Services.
+      #    When set, ID tokens minted for the web client are accepted by the API.
     ports:
       - "5001:5001"
 
@@ -91,11 +97,15 @@ services:
       context: ../../apps/web
       dockerfile: Dockerfile
     restart: unless-stopped
+    env_file:
+      - path: ../../.env
+        required: false
+      - path: ../../apps/web/.env
+        required: false
     environment:
       API_BASE_URL: "http://localhost:5001/api/v1"
       TENANT_SLUG: "example-campus"
-      GOOGLE_CLIENT_IDS: "${GOOGLE_CLIENT_IDS:-}"
-      GOOGLE_CLIENT_ID: "${GOOGLE_CLIENT_ID:-}"
+      # P4: Web client ID for Google Identity Services.
     ports:
       - "4173:80"
 

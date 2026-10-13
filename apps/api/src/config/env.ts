@@ -49,7 +49,13 @@ const EnvSchema = z.object({
     STORAGE_MAX_UPLOAD_BYTES: z.coerce.number().int().positive().default(10 * 1024 * 1024),
 
     // P4 — Google Sign-In. Comma-separated list of accepted audiences.
+    //   Each entry is a Google OAuth client ID (iOS, Android, Web).
     GOOGLE_CLIENT_IDS: z.string().default(DEV_DEFAULT_GOOGLE_CLIENT_IDS),
+
+    // P4 — Web client ID for Google Identity Services.
+    //   When set, it is automatically included in GOOGLE_CLIENT_IDS so that
+    //   ID tokens minted for the web client are accepted by the API.
+    GOOGLE_WEB_CLIENT_ID: z.string().optional(),
 
     // P10 — Firebase Cloud Messaging (Android push).
     FIREBASE_PROJECT_ID: z.string().optional(),
@@ -100,10 +106,14 @@ export const corsAllowedOrigins: string[] | '*' = (() => {
     return raw.split(',').map((s) => s.trim()).filter(Boolean);
 })();
 
-export const googleClientIds: string[] = (env.GOOGLE_CLIENT_IDS ?? '')
-    .split(',')
-    .map((s) => s.trim())
-    .filter(Boolean);
+export const googleClientIds: string[] = (() => {
+    const base = (env.GOOGLE_CLIENT_IDS ?? '')
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
+    const web = env.GOOGLE_WEB_CLIENT_ID ? [env.GOOGLE_WEB_CLIENT_ID.trim()] : [];
+    return [...new Set([...base, ...web])];
+})();
 
 function normalizeBaseUrl(url: string): string {
     return url.replace(/\/+$/, '');
