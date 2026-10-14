@@ -9,7 +9,7 @@ import { Label } from '@/design-revamp/components/ui/label';
 import { Separator } from '@/design-revamp/components/ui/separator';
 import { cn } from '@/design-revamp/lib/utils';
 
-type AuthTab = 'staff-login' | 'reporter-login' | 'register' | 'master-login';
+type AuthTab = 'staff-login' | 'cleaner-login' | 'reporter-login' | 'register' | 'master-login';
 
 const GOOGLE_CLIENT_ID = String(
   (window.__APP_CONFIG__?.GOOGLE_CLIENT_ID as string) ||
@@ -24,7 +24,7 @@ export default function LoginPage() {
   const { login, loginMaster, register, loginWithGoogle } = useAuth();
 
   const [activeTab, setActiveTab] = useState<AuthTab>(
-    requestedTab && ['staff-login', 'reporter-login', 'register', 'master-login'].includes(requestedTab)
+    requestedTab && ['staff-login', 'cleaner-login', 'reporter-login', 'register', 'master-login'].includes(requestedTab)
       ? requestedTab
       : 'staff-login'
   );
@@ -167,10 +167,10 @@ export default function LoginPage() {
   };
 
   const tabs: { id: AuthTab; label: string }[] = [
-    { id: 'staff-login', label: 'Staff Login' },
-    { id: 'reporter-login', label: 'Reporter Login' },
-    { id: 'register', label: 'Register' },
-    { id: 'master-login', label: 'Master Login' },
+    { id: 'staff-login', label: 'Supervisor Login' },
+    { id: 'cleaner-login', label: 'Cleaner Login' },
+    { id: 'reporter-login', label: 'Public Login' },
+    { id: 'master-login', label: 'Admin Login' },
   ];
 
   const renderGoogleButton = () => (
@@ -251,16 +251,18 @@ export default function LoginPage() {
               </div>
             )}
 
-            {activeTab === 'staff-login' && (
+            {(activeTab === 'staff-login' || activeTab === 'cleaner-login') && (
               <>
                 <form onSubmit={handleLogin} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="staff-id">Email or Staff ID</Label>
+                    <Label htmlFor="staff-id">
+                      {activeTab === 'cleaner-login' ? 'Cleaner ID' : 'Supervisor ID or email'}
+                    </Label>
                     <input
                       id="staff-id"
                       type="text"
                       className="flex h-12 w-full rounded-lg border border-input bg-background px-4 text-sm transition-shadow focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2"
-                      placeholder="STAFF123 or staff@example.com"
+                      placeholder={activeTab === 'cleaner-login' ? 'CLN-001' : 'SUP-001 or supervisor@example.com'}
                       value={identifier}
                       onChange={(e) => setIdentifier(e.target.value)}
                       required

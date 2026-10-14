@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, MapPin, Navigation, Send, AlertTriangle } from 'lucide-react';
+import { Loader2, MapPin, Send, AlertTriangle } from 'lucide-react';
 import { useAuth } from '@/design-revamp/hooks/useAuth';
 import { useSubmitReport } from '@/design-revamp/hooks/useReports';
 import { Button } from '@/design-revamp/components/ui/button';
@@ -8,6 +8,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/design-revamp/compon
 import { Label } from '@/design-revamp/components/ui/label';
 import { Textarea } from '@/design-revamp/components/ui/textarea';
 import { PhotoUploader } from '@/design-revamp/components/composites/PhotoUploader';
+import {
+  LocationMapPicker,
+  type Coordinates,
+} from '@/design-revamp/components/composites/LocationMapPicker';
 
 const CATEGORIES = ['Litter', 'Spill', 'Restroom', 'Floor', 'Damage', 'General'] as const;
 const PRIORITIES = [
@@ -27,25 +31,8 @@ export default function SubmitReportPage() {
   const [location, setLocation] = useState('');
   const [details, setDetails] = useState('');
   const [photos, setPhotos] = useState<string[]>([]);
-  const [isLocating, setIsLocating] = useState(false);
-  const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | undefined>();
+  const [coordinates, setCoordinates] = useState<Coordinates | undefined>();
   const [errorMessage, setErrorMessage] = useState('');
-
-  const handleUseLocation = () => {
-    if (!navigator.geolocation) return;
-    setIsLocating(true);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setCoordinates({
-          lat: Number(pos.coords.latitude.toFixed(6)),
-          lng: Number(pos.coords.longitude.toFixed(6)),
-        });
-        setIsLocating(false);
-      },
-      () => setIsLocating(false),
-      { enableHighAccuracy: true, timeout: 10000 },
-    );
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -165,16 +152,21 @@ export default function SubmitReportPage() {
                   variant="outline"
                   size="icon"
                   className="h-11 w-11 shrink-0 active:scale-[0.98]"
-                  onClick={handleUseLocation}
-                  disabled={isLocating}
-                  title="Detect GPS location"
+                  onClick={() => document.getElementById('location-map')?.scrollIntoView({ behavior: 'smooth' })}
+                  title="Choose location on map"
                 >
-                  {isLocating ? (
-                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                  ) : (
-                    <Navigation className="h-4 w-4" />
-                  )}
+                  <MapPin className="h-4 w-4" />
                 </Button>
+              </div>
+              <div id="location-map" className="pt-1">
+                <LocationMapPicker
+                  coordinates={coordinates}
+                  onChange={(nextCoordinates, suggestedAddress) => {
+                    setCoordinates(nextCoordinates);
+                    if (suggestedAddress) setLocation(suggestedAddress);
+                  }}
+                  disabled={submitReport.isPending}
+                />
               </div>
               {coordinates && (
                 <p className="flex items-center gap-1.5 text-xs text-muted-foreground pt-1">

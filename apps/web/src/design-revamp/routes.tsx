@@ -1,7 +1,7 @@
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
 import { Providers } from './providers';
-import { ProtectedRoute, GuestRoute } from '@/design-revamp/components/layout/RouteGuards';
+import { ProtectedRoute, GuestRoute, RoleRoute } from '@/design-revamp/components/layout/RouteGuards';
 import { PublicLayout } from '@/design-revamp/components/layout/PublicLayout';
 
 const LoginPage = lazy(() => import('./views/auth/LoginPage'));
@@ -63,7 +63,11 @@ const router = createBrowserRouter([
   },
   {
     path: '/status',
-    element: <StatusBoardPage />,
+    element: (
+      <PublicLayout>
+        <StatusBoardPage />
+      </PublicLayout>
+    ),
   },
   {
     path: '/dashboard',
@@ -96,89 +100,89 @@ const router = createBrowserRouter([
   {
     path: '/cleaner',
     element: (
-      <ProtectedRoute>
+      <RoleRoute roles={['cleaner']}>
         <CleanerTasksPage />
-      </ProtectedRoute>
+      </RoleRoute>
     ),
   },
   {
     path: '/cleaner/tasks',
     element: (
-      <ProtectedRoute>
+      <RoleRoute roles={['cleaner']}>
         <CleanerTasksPage />
-      </ProtectedRoute>
+      </RoleRoute>
     ),
   },
   {
     path: '/cleaner/account',
     element: (
-      <ProtectedRoute>
+      <RoleRoute roles={['cleaner']}>
         <CleanerAccountPage />
-      </ProtectedRoute>
+      </RoleRoute>
     ),
   },
   {
     path: '/supervisor',
     element: (
-      <ProtectedRoute>
+      <RoleRoute roles={['supervisor']}>
         <SupervisorTaskBoardPage />
-      </ProtectedRoute>
+      </RoleRoute>
     ),
   },
   {
     path: '/supervisor/tasks',
     element: (
-      <ProtectedRoute>
+      <RoleRoute roles={['supervisor']}>
         <SupervisorTaskBoardPage />
-      </ProtectedRoute>
+      </RoleRoute>
     ),
   },
   {
     path: '/supervisor/workforce',
     element: (
-      <ProtectedRoute>
+      <RoleRoute roles={['supervisor']}>
         <SupervisorWorkforcePage />
-      </ProtectedRoute>
+      </RoleRoute>
     ),
   },
   {
     path: '/supervisor/onboard',
     element: (
-      <ProtectedRoute>
+      <RoleRoute roles={['supervisor']}>
         <SupervisorOnboardPage />
-      </ProtectedRoute>
+      </RoleRoute>
     ),
   },
   {
     path: '/admin',
     element: (
-      <ProtectedRoute>
+      <RoleRoute roles={['master']}>
         <AdminOverviewPage />
-      </ProtectedRoute>
+      </RoleRoute>
     ),
   },
   {
     path: '/admin/overview',
     element: (
-      <ProtectedRoute>
+      <RoleRoute roles={['master']}>
         <AdminOverviewPage />
-      </ProtectedRoute>
+      </RoleRoute>
     ),
   },
   {
     path: '/admin/users',
     element: (
-      <ProtectedRoute>
+      <RoleRoute roles={['master']}>
         <AdminUsersPage />
-      </ProtectedRoute>
+      </RoleRoute>
     ),
   },
   {
     path: '/admin/onboard',
     element: (
-      <ProtectedRoute>
+      <RoleRoute roles={['master']}>
         <AdminOnboardPage />
-      </ProtectedRoute>
+      </RoleRoute>
     ),
   },
 ]);

@@ -68,6 +68,8 @@ services:
         condition: service_healthy
       minio:
         condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
     environment:
       PORT: "5001"
       HOST: "0.0.0.0"

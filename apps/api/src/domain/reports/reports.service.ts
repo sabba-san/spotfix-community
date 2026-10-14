@@ -102,6 +102,25 @@ function calculateDistanceMeters(source: LatLng, target: LatLng): number {
     return Math.round(earthRadiusMeters * c);
 }
 
+function removeDuplicateEvidencePhoto(items: unknown, evidencePhoto: string | null | undefined): unknown {
+    if (!Array.isArray(items) || !evidencePhoto) {
+        return items;
+    }
+
+    return items.filter((item) => {
+        if (typeof item === 'string') {
+            return item !== evidencePhoto;
+        }
+        if (item && typeof item === 'object') {
+            const candidate = item as { key?: unknown; url?: unknown; dataUrl?: unknown };
+            return candidate.key !== evidencePhoto &&
+                candidate.url !== evidencePhoto &&
+                candidate.dataUrl !== evidencePhoto;
+        }
+        return true;
+    });
+}
+
 function isUrgentPriority(priority: string | null | undefined): boolean {
     return Boolean(priority && URGENT_PRIORITIES.has(priority));
 }
@@ -190,7 +209,7 @@ function resolveNextStatus(
 export async function serializeReport(row: ReportRow): Promise<SerializedReport> {
     const [evidencePhoto, photos, resolutionPhoto] = await Promise.all([
         photosService.resolvePhotoString(row.evidencePhoto),
-        photosService.resolvePhotoArray(row.photos as unknown),
+        photosService.resolvePhotoArray(removeDuplicateEvidencePhoto(row.photos, row.evidencePhoto)),
         photosService.resolvePhotoString(row.resolutionPhoto)
     ]);
     const resolutionCoordinates = normalizeCoordinate(row.resolutionCoordinates);
@@ -241,6 +260,9 @@ export interface PublicStatusReport {
     location?: string;
     details?: string;
     assignedTo?: string;
+    evidencePhoto?: string;
+    photos: string[];
+    resolutionPhoto?: string;
     resolutionTimestamp?: string;
 }
 
@@ -270,7 +292,13 @@ export interface PublicStatusBoard {
     cleaners: PublicStatusCleaner[];
 }
 
-function serializePublicStatusReport(row: ReportRow): PublicStatusReport {
+async function serializePublicStatusReport(row: ReportRow): Promise<PublicStatusReport> {
+    const [evidencePhoto, photos, resolutionPhoto] = await Promise.all([
+        photosService.resolvePhotoString(row.evidencePhoto),
+        photosService.resolvePhotoArray(removeDuplicateEvidencePhoto(row.photos, row.evidencePhoto)),
+        photosService.resolvePhotoString(row.resolutionPhoto)
+    ]);
+
     return {
         _id: row.id,
         id: row.publicId,
@@ -281,6 +309,9 @@ function serializePublicStatusReport(row: ReportRow): PublicStatusReport {
         location: row.location ?? undefined,
         details: row.details ?? undefined,
         assignedTo: row.assignedTo ?? undefined,
+        evidencePhoto: evidencePhoto ?? undefined,
+        photos,
+        resolutionPhoto: resolutionPhoto ?? undefined,
         resolutionTimestamp: row.resolutionTimestamp ?? undefined
     };
 }
@@ -380,7 +411,7 @@ export const reportsService = {
             cleanersRepository.list({}).catch(() => [])
         ]);
         const now = new Date();
-        const reports = reportRows.map(serializePublicStatusReport);
+        const reports = await Promise.all(reportRows.map(serializePublicStatusReport));
         const cleaners = cleanerRows.map((row) => serializePublicStatusCleaner(row, now));
 
         return {
@@ -433,7 +464,12 @@ export const reportsService = {
             kind: 'evidence'
         });
 
-        const photoKeys = await photosService.ingestPhotoArray(body.photos, {
+        const photoItems = Array.isArray(body.photos) && typeof evidenceCandidate === 'string' &&
+            body.photos[0] && typeof body.photos[0] === 'object' &&
+            (body.photos[0] as { dataUrl?: unknown }).dataUrl === evidenceCandidate
+            ? body.photos.slice(1)
+            : body.photos;
+        const photoKeys = await photosService.ingestPhotoArray(photoItems, {
             reportId,
             kind: 'extra'
         });

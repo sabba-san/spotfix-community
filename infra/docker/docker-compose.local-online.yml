@@ -6,11 +6,8 @@
 # (already pullable: localstack/localstack:latest) and keeps everything else
 # identical (postgres 16, api, web). Original dev file is left untouched.
 #
-# Android-first URL choice: STORAGE_PUBLIC_BASE_URL=http://10.0.2.2:4566 so
-# presigned photo URLs work on the emulator (10.0.2.2 = host loopback).
-# Tradeoff: web photo preview from host browser will not load with that host;
-# API/web text flows are unaffected. Flip to http://localhost:4566 if you
-# demo photos on web instead.
+# The browser-facing web app needs a host-reachable signing endpoint.
+# Android emulator users can override this with http://10.0.2.2:4566.
 
 services:
   postgres:
@@ -57,7 +54,9 @@ services:
           if curl -sf http://s3:4566/_localstack/health >/dev/null; then break; fi;
           echo \"waiting for s3... ($$i)\"; sleep 3;
         done;
-        awslocal --endpoint-url=http://s3:4566 s3 mb s3://spotfix-photos 2>&1 || echo 'bucket exists or create deferred';
+        if ! awslocal --endpoint-url=http://s3:4566 s3api head-bucket --bucket spotfix-photos >/dev/null 2>&1; then
+          awslocal --endpoint-url=http://s3:4566 s3 mb s3://spotfix-photos;
+        fi;
         echo 's3 bucket ready'
       "
     restart: "no"
@@ -77,6 +76,8 @@ services:
         condition: service_healthy
       s3:
         condition: service_healthy
+      s3-init:
+        condition: service_completed_successfully
     environment:
       PORT: "5001"
       HOST: "0.0.0.0"
@@ -90,7 +91,7 @@ services:
       STORAGE_ACCESS_KEY: "spotfix"
       STORAGE_SECRET_KEY: "spotfix-dev-secret"
       STORAGE_FORCE_PATH_STYLE: "true"
-      STORAGE_PUBLIC_BASE_URL: "http://10.0.2.2:4566"
+      STORAGE_PUBLIC_BASE_URL: "http://localhost:4566"
       CORS_ALLOWED_ORIGINS: "*"
       # Google Sign-In ID token verification (iOS + Web/Android Credential Manager client IDs).
       # P4: Web client ID for Google Identity Services.

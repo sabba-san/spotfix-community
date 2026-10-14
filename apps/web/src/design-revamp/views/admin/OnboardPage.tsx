@@ -96,7 +96,7 @@ export default function AdminOnboardPage() {
             <div>
               <span className="text-sm font-bold tracking-tight">SpotFix Control Room</span>
               <span className="hidden sm:inline text-xs text-muted-foreground ml-2">
-                Master Administration
+                Admin Administration
               </span>
             </div>
           </div>
@@ -123,7 +123,7 @@ export default function AdminOnboardPage() {
 
           <div className="flex items-center gap-2">
             <span className="text-xs text-muted-foreground font-medium hidden sm:inline">
-              {user?.name} (Master)
+              {user?.name} (Admin)
             </span>
             <Button
               variant="ghost"

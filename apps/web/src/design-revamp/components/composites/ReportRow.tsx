@@ -116,6 +116,29 @@ export function ReportRow({ report, onClick, selected, showAssignee }: ReportRow
               +{images.length - previewImages.length}
             </div>
           )}
+
+          {report.evidencePhoto && report.resolutionPhoto && (
+            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2" aria-label="Before and after">
+              <figure className="overflow-hidden rounded-lg border bg-muted/20">
+                <img
+                  src={report.evidencePhoto}
+                  alt="Before cleaning"
+                  className="h-36 w-full object-cover"
+                  loading="lazy"
+                />
+                <figcaption className="px-3 py-2 text-xs font-semibold text-muted-foreground">Before</figcaption>
+              </figure>
+              <figure className="overflow-hidden rounded-lg border bg-muted/20">
+                <img
+                  src={report.resolutionPhoto}
+                  alt="After cleaning"
+                  className="h-36 w-full object-cover"
+                  loading="lazy"
+                />
+                <figcaption className="px-3 py-2 text-xs font-semibold text-muted-foreground">After</figcaption>
+              </figure>
+            </div>
+          )}
         </div>
       )}
 

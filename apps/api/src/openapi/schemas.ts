@@ -199,6 +199,9 @@ export const PublicStatusReportSchema = z
         location: z.string().optional(),
         details: z.string().optional(),
         assignedTo: z.string().optional(),
+        evidencePhoto: z.string().url().optional(),
+        photos: z.array(z.string().url()),
+        resolutionPhoto: z.string().url().optional(),
         timestamp: isoDateTime,
         resolutionTimestamp: isoDateTime.optional()
     })

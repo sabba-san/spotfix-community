@@ -79,6 +79,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       clearSession();
       setUser(null);
+      window.history.replaceState(null, '', '/login');
+      window.dispatchEvent(new PopStateEvent('popstate'));
     }
   }, []);
 

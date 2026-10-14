@@ -60,6 +60,22 @@ export function useUpdateReport() {
   });
 }
 
+export function useReportStatusMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ reportId, status, resolutionPhoto }: {
+      reportId: string;
+      status: string;
+      resolutionPhoto?: string;
+    }) => updateReport(reportId, { status, resolutionPhoto }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['reports'] });
+      queryClient.invalidateQueries({ queryKey: ['myReports'] });
+      queryClient.invalidateQueries({ queryKey: ['publicStatusBoard'] });
+    },
+  });
+}
+
 export function useCleaners(query: Record<string, string> = {}) {
   return useQuery({
     queryKey: ['cleaners', query],

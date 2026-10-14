@@ -241,6 +241,7 @@ export default function CleanerTasksPage() {
                   const id = report.id || report._id;
                   const isResolved = report.status === 'Resolved';
                   const isInProgress = report.status === 'In Progress';
+                  const isAssigned = report.status === 'Assigned';
                   const isStarting = actionLoading === id;
 
                   return (
@@ -294,7 +295,19 @@ export default function CleanerTasksPage() {
                       {/* Actions for cleaner */}
                       {!isResolved && (
                         <div className="mt-4 pt-3 border-t border-border/60 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-                          {!isInProgress ? (
+                          {isAssigned ? (
+                            <div className="flex flex-col gap-2 sm:flex-row">
+                              <Button
+                                size="sm"
+                                className="min-h-12 gradient-bg text-white"
+                                onClick={() => handleStartTask(id)}
+                                disabled={isStarting}
+                              >
+                                <Check className="mr-1.5 h-4 w-4" />
+                                Accept and start task
+                              </Button>
+                            </div>
+                          ) : !isInProgress ? (
                             <Button
                               size="sm"
                               onClick={() => handleStartTask(id)}

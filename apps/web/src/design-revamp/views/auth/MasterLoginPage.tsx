@@ -40,7 +40,7 @@ export default function MasterLoginPage() {
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-600 font-bold">
               <Shield className="h-5 w-5" />
             </div>
-            <CardTitle className="text-2xl font-bold tracking-tight">Master Admin</CardTitle>
+            <CardTitle className="text-2xl font-bold tracking-tight">Admin Login</CardTitle>
           </div>
           <p className="text-sm text-muted-foreground pt-1">
             Dedicated administrator access for the municipal control room.

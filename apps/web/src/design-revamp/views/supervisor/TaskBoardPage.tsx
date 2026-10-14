@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '@/design-revamp/hooks/useAuth';
-import { useReports, useCleaners, useAssignCleaner } from '@/design-revamp/hooks/useReports';
+import { useReports, useCleaners, useAssignCleaner, useUpdateReport } from '@/design-revamp/hooks/useReports';
 import { PageLoader } from '@/design-revamp/components/feedback/PageLoader';
 import { ErrorState } from '@/design-revamp/components/feedback/ErrorState';
 import { EmptyState } from '@/design-revamp/components/feedback/EmptyState';
@@ -24,10 +24,12 @@ export default function SupervisorTaskBoardPage() {
   const { data: reports, isLoading: isLoadingReports, isError, refetch } = useReports();
   const { data: cleaners, refetch: refetchCleaners } = useCleaners();
   const assignCleanerMutation = useAssignCleaner();
+  const updateReportMutation = useUpdateReport();
 
   const [statusFilter, setStatusFilter] = useState<string>('All');
   const [priorityFilter, setPriorityFilter] = useState<string>('All');
   const [assigningId, setAssigningId] = useState<string | null>(null);
+  const [reviewingId, setReviewingId] = useState<string | null>(null);
 
   const allReports = reports || [];
   const allCleaners = cleaners || [];
@@ -52,6 +54,15 @@ export default function SupervisorTaskBoardPage() {
       refetchCleaners();
     } finally {
       setAssigningId(null);
+    }
+  };
+
+  const handleReview = async (reportId: string, status: 'Resolved' | 'Rejected') => {
+    setReviewingId(reportId);
+    try {
+      await updateReportMutation.mutateAsync({ reportId, body: { status } });
+    } finally {
+      setReviewingId(null);
     }
   };
 
@@ -263,6 +274,19 @@ export default function SupervisorTaskBoardPage() {
                         <span>{report.location || 'Location not specified'}</span>
                       </p>
                       <p className="text-xs text-foreground/90 pt-1">{report.details}</p>
+
+                      {report.evidencePhoto && report.resolutionPhoto && (
+                        <div className="mt-3 grid max-w-xl grid-cols-1 gap-2 sm:grid-cols-2" aria-label="Before and after">
+                          <figure className="overflow-hidden rounded-lg border">
+                            <img src={report.evidencePhoto} alt="Before cleaning" className="h-28 w-full object-cover" />
+                            <figcaption className="px-2 py-1.5 text-[11px] font-semibold text-muted-foreground">Before</figcaption>
+                          </figure>
+                          <figure className="overflow-hidden rounded-lg border">
+                            <img src={report.resolutionPhoto} alt="After cleaning" className="h-28 w-full object-cover" />
+                            <figcaption className="px-2 py-1.5 text-[11px] font-semibold text-muted-foreground">After</figcaption>
+                          </figure>
+                        </div>
+                      )}
                     </div>
 
                     {/* Cleaner Assignment Block */}
@@ -289,6 +313,30 @@ export default function SupervisorTaskBoardPage() {
                             ))}
                           </select>
                         </div>
+                      </div>
+                    )}
+                    {report.status === 'Awaiting Endorsement' && (
+                      <div className="mt-4 flex flex-wrap gap-2 border-t border-border/60 pt-3">
+                        <Button
+                          type="button"
+                          size="sm"
+                          className="min-h-12 bg-emerald-600 text-white hover:bg-emerald-700"
+                          disabled={reviewingId === id}
+                          onClick={() => handleReview(id, 'Resolved')}
+                        >
+                          <CheckCircle2 className="mr-1.5 h-4 w-4" />
+                          Endorse resolution
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          className="min-h-12 border-destructive/40 text-destructive hover:bg-destructive/10"
+                          disabled={reviewingId === id}
+                          onClick={() => handleReview(id, 'Rejected')}
+                        >
+                          Reject resolution
+                        </Button>
                       </div>
                     )}
                   </div>

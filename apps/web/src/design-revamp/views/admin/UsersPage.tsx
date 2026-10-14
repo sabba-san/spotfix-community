@@ -60,7 +60,7 @@ export default function AdminUsersPage() {
             <div>
               <span className="text-sm font-bold tracking-tight">SpotFix Control Room</span>
               <span className="hidden sm:inline text-xs text-muted-foreground ml-2">
-                Master Administration
+                Admin Administration
               </span>
             </div>
           </div>
@@ -87,7 +87,7 @@ export default function AdminUsersPage() {
 
           <div className="flex items-center gap-2">
             <span className="text-xs text-muted-foreground font-medium hidden sm:inline">
-              {user?.name} (Master)
+              {user?.name} (Admin)
             </span>
             <Button
               variant="ghost"
@@ -136,7 +136,7 @@ export default function AdminUsersPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-3">
           <div className="flex items-center gap-2">
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Role:</span>
-            {['All', 'Public', 'Cleaner', 'Supervisor', 'Master'].map((r) => (
+            {['All', 'Public', 'Cleaner', 'Supervisor', 'Admin'].map((r) => (
               <button
                 key={r}
                 type="button"
@@ -180,7 +180,7 @@ export default function AdminUsersPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredUsers.map((u) => {
               const roleColor =
-                u.role === 'master'
+                (r === 'Admin' ? u.role === 'master' : u.role === r.toLowerCase())
                   ? 'border-indigo-300 bg-indigo-50 text-indigo-700'
                   : u.role === 'supervisor'
                   ? 'border-teal-300 bg-teal-50 text-teal-700'
