@@ -14,6 +14,7 @@ import {
   Loader2,
   CheckCircle2,
   AlertCircle,
+  Home,
 } from 'lucide-react';
 
 export default function AdminOnboardPage() {
@@ -78,6 +79,7 @@ export default function AdminOnboardPage() {
   };
 
   const navLinks = [
+    { to: '/dashboard', label: 'Dashboard', icon: Home },
     { to: '/admin/overview', label: 'Overview', icon: LayoutDashboard },
     { to: '/admin/users', label: 'Users', icon: Users2 },
     { to: '/admin/onboard', label: 'Onboarding', icon: UserPlus },
@@ -102,7 +104,7 @@ export default function AdminOnboardPage() {
             </div>
           </div>
 
-          <nav className="hidden md:flex items-center gap-1">
+          <nav className="flex max-w-[55vw] items-center gap-1 overflow-x-auto" aria-label="Admin navigation">
             {navLinks.map((item) => {
               const isActive = location.pathname === item.to;
               return (

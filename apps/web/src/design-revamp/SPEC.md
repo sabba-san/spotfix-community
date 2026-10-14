@@ -73,7 +73,7 @@ Phase 3 custom: MapPicker, PhotoUploader, ReportRow, StatusMetricCard, TaskDetai
 | #/ (auth) | /login | All |
 | #/ (register) | /register | Public |
 | #/ (master) | /login/master | Admin |
-| #/ (public-status) | /status | Public (unauth) |
+| #/ (public-status) | /dashboard | Public (unauth, status is rendered inline) |
 | #/ (public portal) | /dashboard | Public |
 | #/ (submit) | /submit | Public |
 | #/ (my-reports) | /my-reports | Public |
@@ -99,7 +99,7 @@ Phase 3 custom: MapPicker, PhotoUploader, ReportRow, StatusMetricCard, TaskDetai
 - Set up routing + providers
 
 ### Phase 2: Public Reporter V2
-- /login, /register, /submit, /status, /my-reports, /dashboard
+- /login, /register, /submit, /my-reports, /dashboard
 - PWA: install prompt, offline shell, Background Sync
 
 ### Phase 3: Cleaner V2

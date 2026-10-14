@@ -2,7 +2,16 @@ import { ReactNode } from 'react';
 import { Outlet, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '@/design-revamp/hooks/useAuth';
 import { Button } from '@/design-revamp/components/ui/button';
-import { MapPin, LogOut, User, ClipboardList, Home } from 'lucide-react';
+import {
+  MapPin,
+  LogOut,
+  User,
+  Home,
+  CircleUserRound,
+  Send,
+  ClipboardCheck,
+  ShieldCheck,
+} from 'lucide-react';
 import { cn } from '@/design-revamp/lib/utils';
 
 export function PublicLayout({ children }: { children?: ReactNode }) {
@@ -10,11 +19,21 @@ export function PublicLayout({ children }: { children?: ReactNode }) {
   const location = useLocation();
 
   const homeRoute = user ? '/dashboard' : '/';
+  // Role workspace shortcut, placed between Submit Issue and My Reports.
+  const roleLink =
+    user?.role === 'supervisor'
+      ? { to: '/supervisor/dispatch', icon: Send, label: 'Dispatch' }
+      : user?.role === 'cleaner'
+        ? { to: '/cleaner/tasks', icon: ClipboardCheck, label: 'My Tasks' }
+        : user?.role === 'master'
+          ? { to: '/admin/overview', icon: ShieldCheck, label: 'Control Room' }
+          : null;
   const navItems = [
     { to: homeRoute, icon: Home, label: user ? 'Dashboard' : 'Home' },
     { to: '/submit', icon: MapPin, label: 'Submit Issue' },
-    { to: '/status', icon: ClipboardList, label: 'Live Status' },
+    ...(roleLink ? [roleLink] : []),
     { to: '/my-reports', icon: User, label: 'My Reports' },
+    ...(user ? [{ to: '/account', icon: CircleUserRound, label: 'Account' }] : []),
   ];
 
   return (

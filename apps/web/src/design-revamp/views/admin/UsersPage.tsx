@@ -18,6 +18,7 @@ import {
   UserCog,
   CircleUserRound,
   Loader2,
+  Home,
 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 
@@ -68,6 +69,7 @@ export default function AdminUsersPage() {
   }
 
   const navLinks = [
+    { to: '/dashboard', label: 'Dashboard', icon: Home },
     { to: '/admin/overview', label: 'Overview', icon: LayoutDashboard },
     { to: '/admin/users', label: 'Users', icon: Users2 },
     { to: '/admin/onboard', label: 'Onboarding', icon: UserPlus },
@@ -88,7 +90,7 @@ export default function AdminUsersPage() {
               <span className="hidden sm:inline text-xs text-muted-foreground ml-2">Admin Administration</span>
             </div>
           </div>
-          <nav className="hidden md:flex items-center gap-1">
+          <nav className="flex max-w-[55vw] items-center gap-1 overflow-x-auto" aria-label="Admin navigation">
             {navLinks.map((item) => {
               const isActive = location.pathname === item.to;
               return (

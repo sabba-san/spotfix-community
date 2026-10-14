@@ -1,0 +1,452 @@
+import { useMemo, useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { useAuth } from '@/design-revamp/hooks/useAuth';
+import {
+  useAssignReportV2,
+  useRejectVolunteerV2,
+  useSupervisorCleanersV2,
+  useSupervisorDashboardV2,
+  useSupervisorReportsV2,
+  useVolunteerRequestsV2,
+} from '@/design-revamp/hooks/useV2';
+import { ReportDetailDialog } from '@/design-revamp/components/composites/ReportDetailDialog';
+import { VolunteerQueue } from '@/design-revamp/components/composites/VolunteerQueue';
+import {
+  canAssignV2Status,
+  formatV2Status,
+  v2StatusTone,
+} from '@/design-revamp/components/composites/V2Status';
+import type { V2VolunteerRequest } from '@/design-revamp/lib/api';
+import { PageLoader } from '@/design-revamp/components/feedback/PageLoader';
+import { ErrorState } from '@/design-revamp/components/feedback/ErrorState';
+import { EmptyState } from '@/design-revamp/components/feedback/EmptyState';
+import { Button } from '@/design-revamp/components/ui/button';
+import { Badge } from '@/design-revamp/components/ui/badge';
+import {
+  ShieldAlert,
+  ClipboardList,
+  Home,
+  Inbox,
+  Users,
+  UserPlus,
+  Send,
+  RefreshCw,
+  LogOut,
+  MapPin,
+  HandHelping,
+  UserCheck,
+  CircleUserRound,
+  CheckCircle2,
+} from 'lucide-react';
+
+/**
+ * Supervisor dispatch desk — unassigned reports, pending volunteer
+ * requests, and available cleaners in one place. Approval assigns the
+ * requesting cleaner; manual dispatch pairs a selected report with a
+ * selected cleaner. Resolution review stays in ReportDetailDialog.
+ */
+export default function SupervisorDispatchPage() {
+  const { user, logout } = useAuth();
+  const location = useLocation();
+
+  const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
+  const [detailReportId, setDetailReportId] = useState<string | null>(null);
+  const [selectedCleanerId, setSelectedCleanerId] = useState<string | null>(null);
+  const [assignNote, setAssignNote] = useState('');
+  const [cleanerSearch, setCleanerSearch] = useState('');
+  const [appliedCleanerSearch, setAppliedCleanerSearch] = useState<string | undefined>(undefined);
+  const [actionError, setActionError] = useState<string | null>(null);
+
+  const dashboard = useSupervisorDashboardV2();
+  const submittedQuery = useSupervisorReportsV2('submitted');
+  const rejectedQuery = useSupervisorReportsV2('rejected_by_cleaner');
+  const volunteersQuery = useVolunteerRequestsV2('pending');
+  const cleanersQuery = useSupervisorCleanersV2(appliedCleanerSearch);
+
+  const assignMutation = useAssignReportV2();
+  const rejectVolunteerMutation = useRejectVolunteerV2();
+
+  const unassigned = useMemo(
+    () => [
+      ...(submittedQuery.data?.reports ?? []),
+      ...(rejectedQuery.data?.reports ?? []),
+    ],
+    [submittedQuery.data, rejectedQuery.data],
+  );
+  const volunteers = useMemo(
+    () => volunteersQuery.data ?? [],
+    [volunteersQuery.data],
+  );
+  const availableCleaners = useMemo(
+    () => (cleanersQuery.data ?? []).filter((c) => !c.is_busy),
+    [cleanersQuery.data],
+  );
+
+  const summary = dashboard.data?.summary;
+  const pendingCount = (summary?.submitted ?? 0) + (summary?.rejected_by_cleaner ?? 0);
+  const inProgressCount =
+    (summary?.assigned ?? 0) + (summary?.accepted_by_cleaner ?? 0) + (summary?.in_progress ?? 0);
+
+  const selectedReport = unassigned.find((r) => r.id === selectedReportId) ?? null;
+  const selectedCleaner = availableCleaners.find((c) => c.user_id === selectedCleanerId) ?? null;
+  const canAssign =
+    selectedReport != null &&
+    selectedCleaner != null &&
+    canAssignV2Status(selectedReport.status);
+
+  const queueLoading = submittedQuery.isLoading || rejectedQuery.isLoading;
+  const queueError = submittedQuery.isError || rejectedQuery.isError;
+
+  function refetchAll() {
+    dashboard.refetch();
+    submittedQuery.refetch();
+    rejectedQuery.refetch();
+    volunteersQuery.refetch();
+    cleanersQuery.refetch();
+  }
+
+  async function runAssign(reportId: string, cleanerUserId: string, note: string) {
+    setActionError(null);
+    try {
+      await assignMutation.mutateAsync({
+        reportId,
+        body: {
+          cleaner_user_id: cleanerUserId,
+          ...(note.trim() ? { note: note.trim() } : {}),
+        },
+      });
+      setSelectedReportId(null);
+      setSelectedCleanerId(null);
+      setAssignNote('');
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : 'Assign failed');
+    }
+  }
+
+  async function handleApproveVolunteer(v: V2VolunteerRequest) {
+    setActionError(null);
+    try {
+      await assignMutation.mutateAsync({
+        reportId: v.report_id,
+        body: { cleaner_user_id: v.cleaner_user_id },
+      });
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : 'Approval failed');
+    }
+  }
+
+  async function handleDeclineVolunteer(v: V2VolunteerRequest, reason: string) {
+    setActionError(null);
+    try {
+      await rejectVolunteerMutation.mutateAsync({ requestId: v.id, reason });
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : 'Decline failed');
+    }
+  }
+
+  const navLinks = [
+    { to: '/dashboard', label: 'Dashboard', icon: Home },
+    { to: '/supervisor/tasks', label: 'Triage Board', icon: ClipboardList },
+    { to: '/supervisor/dispatch', label: 'Dispatch', icon: Send },
+    { to: '/supervisor/reviews', label: 'Reviews', icon: Inbox },
+    { to: '/supervisor/workforce', label: 'Workforce Roster', icon: Users },
+    { to: '/supervisor/onboard', label: 'Onboard Staff', icon: UserPlus },
+    { to: '/supervisor/account', label: 'Account', icon: CircleUserRound },
+  ];
+
+  return (
+    <div className="min-h-[100dvh] bg-background text-foreground flex flex-col">
+      <header className="sticky top-0 z-40 border-b border-border/80 bg-background/95 backdrop-blur-md">
+        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-teal-500/10 text-teal-600 font-bold">
+              <ShieldAlert className="h-4.5 w-4.5" />
+            </div>
+            <div>
+              <span className="text-sm font-bold tracking-tight">SpotFix Operations</span>
+              <span className="hidden sm:inline text-xs text-muted-foreground ml-2">Dispatch Desk</span>
+            </div>
+          </div>
+          <nav className="flex max-w-[55vw] items-center gap-1 overflow-x-auto" aria-label="Supervisor navigation">
+            {navLinks.map((item) => {
+              const isActive = location.pathname === item.to;
+              return (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors active:scale-[0.98] ${
+                    isActive
+                      ? 'bg-primary/10 text-primary font-semibold'
+                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                  }`}
+                >
+                  <item.icon className="h-4 w-4" />
+                  {item.label}
+                </Link>
+              );
+            })}
+          </nav>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground font-medium hidden sm:inline">{user?.name}</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={logout}
+              className="h-8 gap-1.5 px-2 text-xs text-muted-foreground hover:text-destructive active:scale-[0.98]"
+            >
+              <LogOut className="h-3.5 w-3.5" />
+              <span>Sign out</span>
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      <main className="flex-1 mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 space-y-6">
+        <div className="rounded-2xl border border-border/80 bg-card p-5 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 className="text-xl font-bold tracking-tight text-foreground">Dispatch & Assignment</h1>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Approve volunteer requests or pair an unassigned report with an available cleaner.
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={refetchAll}
+              disabled={queueLoading}
+              className="gap-1.5 text-xs active:scale-[0.98]"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${queueLoading ? 'animate-spin' : ''}`} />
+              Refresh All
+            </Button>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 mt-5">
+            <div className="rounded-xl border bg-card p-3">
+              <span className="text-xs text-muted-foreground font-medium">Pending Triage</span>
+              <p className="text-2xl font-bold text-amber-600 mt-0.5">{dashboard.isLoading ? '…' : pendingCount}</p>
+            </div>
+            <div className="rounded-xl border bg-card p-3">
+              <span className="text-xs text-muted-foreground font-medium">Volunteers Waiting</span>
+              <p className="text-2xl font-bold text-violet-600 mt-0.5">{volunteersQuery.isLoading ? '…' : volunteers.length}</p>
+            </div>
+            <div className="rounded-xl border bg-card p-3">
+              <span className="text-xs text-muted-foreground font-medium">Cleaners Available</span>
+              <p className="text-2xl font-bold text-emerald-600 mt-0.5">{cleanersQuery.isLoading ? '…' : availableCleaners.length}</p>
+            </div>
+            <div className="rounded-xl border bg-card p-3">
+              <span className="text-xs text-muted-foreground font-medium">In Progress</span>
+              <p className="text-2xl font-bold text-blue-600 mt-0.5">{dashboard.isLoading ? '…' : inProgressCount}</p>
+            </div>
+          </div>
+        </div>
+
+        {actionError && (
+          <p role="alert" className="text-xs font-medium text-destructive">{actionError}</p>
+        )}
+
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          {/* Column 1: unassigned reports */}
+          <section className="space-y-3 rounded-2xl border border-border/80 bg-card p-4 shadow-sm">
+            <h2 className="flex items-center gap-2 text-sm font-bold">
+              <ClipboardList className="h-4 w-4 text-amber-600" />
+              Unassigned Reports ({unassigned.length})
+            </h2>
+            {queueLoading && <PageLoader />}
+            {queueError && (
+              <ErrorState onRetry={refetchAll} />
+            )}
+            {!queueLoading && !queueError && unassigned.length === 0 && (
+              <EmptyState
+                icon={<CheckCircle2 className="h-8 w-8 text-emerald-600" />}
+                title="Queue is clear"
+                description="No unassigned reports right now."
+              />
+            )}
+            {!queueLoading && !queueError && unassigned.length > 0 && (
+              <div className="space-y-2.5">
+                {unassigned.map((report) => {
+                  const isSelected = report.id === selectedReportId;
+                  return (
+                    <article
+                      key={report.id}
+                      className={`rounded-xl border p-3 transition-all ${
+                        isSelected
+                          ? 'border-primary bg-primary/5 ring-1 ring-primary shadow-sm'
+                          : 'border-border/80 hover:border-primary/40'
+                      }`}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => setSelectedReportId(isSelected ? null : report.id)}
+                        className="flex w-full flex-col gap-1.5 text-left"
+                        aria-pressed={isSelected}
+                      >
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="font-semibold text-sm text-foreground">{report.title}</h3>
+                          <Badge variant="outline" className={`text-[11px] ${v2StatusTone(report.status)}`}>
+                            {formatV2Status(report.status)}
+                          </Badge>
+                        </div>
+                        <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                          <MapPin className="h-3.5 w-3.5 text-primary shrink-0" />
+                          <span>{report.location_address || 'Location not specified'}</span>
+                        </p>
+                      </button>
+                      <div className="mt-2 flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 flex-1 text-[11px]"
+                          onClick={() => setDetailReportId(report.id)}
+                        >
+                          View details
+                        </Button>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+
+          {/* Column 2: volunteer requests */}
+          <section className="space-y-3 rounded-2xl border border-amber-200 bg-amber-50/40 p-4 shadow-sm dark:border-amber-900 dark:bg-amber-950/20">
+            <h2 className="flex items-center gap-2 text-sm font-bold text-amber-800 dark:text-amber-200">
+              <HandHelping className="h-4 w-4" />
+              Volunteer Requests ({volunteers.length})
+            </h2>
+            <p className="text-[11px] text-muted-foreground">
+              Approving assigns the job to the requesting cleaner.
+            </p>
+            {volunteersQuery.isLoading && <PageLoader />}
+            {volunteersQuery.isError && <ErrorState onRetry={() => volunteersQuery.refetch()} />}
+            {!volunteersQuery.isLoading && !volunteersQuery.isError && (
+              <VolunteerQueue
+                requests={volunteers}
+                approvePending={assignMutation.isPending}
+                declinePending={rejectVolunteerMutation.isPending}
+                onApprove={handleApproveVolunteer}
+                onDecline={handleDeclineVolunteer}
+                showReportTitle
+              />
+            )}
+          </section>
+
+          {/* Column 3: available cleaners */}
+          <section className="space-y-3 rounded-2xl border border-border/80 bg-card p-4 shadow-sm">
+            <h2 className="flex items-center gap-2 text-sm font-bold">
+              <Users className="h-4 w-4 text-emerald-600" />
+              Available Cleaners ({availableCleaners.length})
+            </h2>
+            <form
+              className="flex gap-2"
+              onSubmit={(e) => {
+                e.preventDefault();
+                setAppliedCleanerSearch(cleanerSearch.trim() || undefined);
+              }}
+            >
+              <input
+                value={cleanerSearch}
+                onChange={(e) => setCleanerSearch(e.target.value)}
+                placeholder="Search name, ID, zone…"
+                aria-label="Search available cleaners"
+                className="h-9 flex-1 rounded-lg border border-input bg-background px-3 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+              <Button type="submit" size="sm" variant="outline" className="h-9 text-xs">Search</Button>
+            </form>
+            {cleanersQuery.isLoading && <PageLoader />}
+            {cleanersQuery.isError && <ErrorState onRetry={() => cleanersQuery.refetch()} />}
+            {!cleanersQuery.isLoading && !cleanersQuery.isError && availableCleaners.length === 0 && (
+              <EmptyState
+                icon={<Users className="h-8 w-8 text-muted-foreground" />}
+                title="No cleaners free"
+                description="All cleaners are currently engaged on duty."
+              />
+            )}
+            {!cleanersQuery.isLoading && !cleanersQuery.isError && availableCleaners.length > 0 && (
+              <div className="space-y-2.5">
+                {availableCleaners.map((cleaner) => {
+                  const isSelected = cleaner.user_id === selectedCleanerId;
+                  return (
+                    <button
+                      key={cleaner.user_id}
+                      type="button"
+                      onClick={() => setSelectedCleanerId(isSelected ? null : cleaner.user_id)}
+                      aria-pressed={isSelected}
+                      className={`flex w-full items-center justify-between gap-2 rounded-xl border p-3 text-left transition-all ${
+                        isSelected
+                          ? 'border-primary bg-primary/5 ring-1 ring-primary shadow-sm'
+                          : 'border-border/80 hover:border-primary/40'
+                      }`}
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate font-semibold text-sm text-foreground">{cleaner.name}</p>
+                        <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
+                          {cleaner.work_location || 'General Facilities'} · {cleaner.phone || 'No phone'}
+                        </p>
+                      </div>
+                      <Badge variant="outline" className="shrink-0 border-emerald-300 bg-emerald-50 text-[11px] text-emerald-700">
+                        Available
+                      </Badge>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+        </div>
+
+        {/* Dispatch action bar */}
+        <section className="rounded-2xl border border-primary/30 bg-primary/5 p-4 shadow-sm">
+          <h2 className="flex items-center gap-2 text-sm font-bold">
+            <UserCheck className="h-4 w-4 text-primary" />
+            Manual Dispatch
+          </h2>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {selectedReport ? (
+              <>Report: <span className="font-semibold text-foreground">{selectedReport.title}</span></>
+            ) : (
+              'Select an unassigned report from the left column.'
+            )}
+            {' · '}
+            {selectedCleaner ? (
+              <>Cleaner: <span className="font-semibold text-foreground">{selectedCleaner.name}</span></>
+            ) : (
+              'Select an available cleaner from the right column.'
+            )}
+          </p>
+          <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+            <input
+              value={assignNote}
+              onChange={(e) => setAssignNote(e.target.value)}
+              placeholder="Note for cleaner (optional, max 500)"
+              maxLength={500}
+              aria-label="Note for cleaner"
+              className="h-11 flex-1 rounded-lg border border-input bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+            />
+            <Button
+              className="min-h-11 sm:w-auto"
+              disabled={!canAssign || assignMutation.isPending}
+              onClick={() =>
+                selectedReport &&
+                selectedCleaner &&
+                runAssign(selectedReport.id, selectedCleaner.user_id, assignNote)
+              }
+            >
+              <Send className="mr-1.5 h-4 w-4" />
+              {assignMutation.isPending ? 'Assigning…' : 'Assign job'}
+            </Button>
+          </div>
+        </section>
+      </main>
+
+      {detailReportId && (
+        <ReportDetailDialog
+          reportId={detailReportId}
+          onClose={() => setDetailReportId(null)}
+        />
+      )}
+    </div>
+  );
+}

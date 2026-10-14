@@ -16,6 +16,12 @@ export interface CreateUserAccountInput {
     email?: string | null;
 }
 
+export interface UpdateUserProfileInput {
+    name?: string;
+    phone?: string;
+    workLocation?: string;
+}
+
 export interface LinkGoogleInput {
     googleSub: string;
     email?: string | null;
@@ -75,8 +81,20 @@ export const usersRepository = {
         });
     },
 
-    async linkGoogle(id: string, input: LinkGoogleInput): Promise<void> {
+    async updateProfile(id: string, input: UpdateUserProfileInput): Promise<UserAccountRow | null> {
+        // updateMany (not update) so the tenant extension scopes the write.
         await prisma.userAccount.updateMany({
+            where: { id },
+            data: {
+                ...(input.name !== undefined ? { name: input.name } : {}),
+                ...(input.phone !== undefined ? { phone: input.phone } : {}),
+                ...(input.workLocation !== undefined ? { workLocation: input.workLocation } : {})
+            }
+        });
+        return prisma.userAccount.findFirst({ where: { id } });
+    },
+
+    async linkGoogle(id: string, input: LinkGoogleInput): Promise<void> {        await prisma.userAccount.updateMany({
             where: { id },
             data: {
                 googleSub: input.googleSub,

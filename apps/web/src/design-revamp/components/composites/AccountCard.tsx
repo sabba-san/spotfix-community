@@ -1,11 +1,15 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/design-revamp/hooks/useAuth';
-import { useNotificationsV2, useMarkNotificationReadV2 } from '@/design-revamp/hooks/useV2';
+import {
+  useNotificationsV2,
+  useMarkNotificationReadV2,
+  useUpdateProfile,
+} from '@/design-revamp/hooks/useV2';
 import { getV2Me } from '@/design-revamp/lib/api';
-import type { User } from '@/design-revamp/lib/api';
 import { Button } from '@/design-revamp/components/ui/button';
 import { Badge } from '@/design-revamp/components/ui/badge';
-import { LogOut, Bell, CheckCheck } from 'lucide-react';
+import { Label } from '@/design-revamp/components/ui/label';
+import { LogOut, Bell, CheckCheck, Pencil, X, Loader2, CheckCircle2 } from 'lucide-react';
 
 function initials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -25,14 +29,25 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 /**
  * Shared per-role account card (Android AccountScreen parity): profile,
  * details, notification history, sign out. Rendered on every role's
- * /account route.
+ * /account route. Non-master users can edit name/phone/zone via
+ * PATCH /api/v1/users/me.
  */
 export function AccountCard() {
-  const { user, logout } = useAuth();
+  const { user, logout, refreshUser } = useAuth();
   const notifications = useNotificationsV2(20);
   const markRead = useMarkNotificationReadV2();
+  const updateProfile = useUpdateProfile();
   const [roles, setRoles] = useState<string[] | null>(null);
   const [rolesError, setRolesError] = useState(false);
+
+  const [editing, setEditing] = useState(false);
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [workLocation, setWorkLocation] = useState('');
+  const [formError, setFormError] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
+
+  const isMaster = user?.authType === 'master';
 
   useEffect(() => {
     let cancelled = false;
@@ -55,6 +70,51 @@ export function AccountCard() {
   }, [user]);
 
   const shown = (notifications.data ?? []).slice(0, 10);
+
+  function startEdit() {
+    setName(user?.name ?? '');
+    setPhone(user?.phone ?? '');
+    setWorkLocation(user?.workLocation ?? '');
+    setFormError(null);
+    setSaved(false);
+    setEditing(true);
+  }
+
+  function cancelEdit() {
+    setEditing(false);
+    setFormError(null);
+  }
+
+  async function saveEdit(e: React.FormEvent) {
+    e.preventDefault();
+    const trimmedName = name.trim();
+    const trimmedPhone = phone.trim();
+    const trimmedZone = workLocation.trim();
+    if (trimmedName.length > 0 && trimmedName.length < 2) {
+      setFormError('Name must be at least 2 characters.');
+      return;
+    }
+    if (trimmedName.length > 120 || trimmedPhone.length > 30 || trimmedZone.length > 120) {
+      setFormError('One or more fields exceed the maximum length.');
+      return;
+    }
+    setFormError(null);
+    try {
+      await updateProfile.mutateAsync({
+        ...(trimmedName ? { name: trimmedName } : {}),
+        phone: trimmedPhone,
+        workLocation: trimmedZone,
+      });
+      await refreshUser();
+      setEditing(false);
+      setSaved(true);
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : 'Failed to save profile');
+    }
+  }
+
+  const inputClass =
+    'h-10 w-full rounded-lg border border-input bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary';
 
   return (
     <div className="mx-auto w-full max-w-xl space-y-4 px-4 py-8 sm:px-6">
@@ -79,10 +139,78 @@ export function AccountCard() {
           {rolesError && <InfoRow label="Capabilities" value="Reporter" />}
           <InfoRow label="ID" value={user?.idNumber || '—'} />
           <InfoRow label="Email" value={user?.email || '—'} />
-          <InfoRow label="Phone" value={user?.phone || '—'} />
-          <InfoRow label="Zone" value={user?.workLocation || '—'} />
+          {!editing && (
+            <>
+              <InfoRow label="Phone" value={user?.phone || '—'} />
+              <InfoRow label="Zone" value={user?.workLocation || '—'} />
+            </>
+          )}
           <InfoRow label="Sign-in" value={user?.authType === 'master' ? 'Master' : 'User'} />
         </div>
+        {saved && !editing && (
+          <p className="mt-3 flex items-center gap-1.5 text-xs font-medium text-emerald-700">
+            <CheckCircle2 className="h-3.5 w-3.5" /> Profile updated.
+          </p>
+        )}
+        {!isMaster && !editing && (
+          <Button onClick={startEdit} variant="outline" className="mt-4 w-full min-h-11">
+            <Pencil className="mr-1.5 h-4 w-4" />
+            Edit profile
+          </Button>
+        )}
+        {!isMaster && editing && (
+          <form onSubmit={saveEdit} className="mt-4 space-y-3 border-t border-border/60 pt-4">
+            {formError && (
+              <p role="alert" className="text-xs font-medium text-destructive">{formError}</p>
+            )}
+            <div className="space-y-1.5">
+              <Label htmlFor="account-name">Full name</Label>
+              <input
+                id="account-name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Your display name"
+                maxLength={120}
+                className={inputClass}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="account-phone">Phone</Label>
+              <input
+                id="account-phone"
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="e.g. +65 9234 5678"
+                maxLength={30}
+                className={inputClass}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="account-zone">Zone / Department</Label>
+              <input
+                id="account-zone"
+                value={workLocation}
+                onChange={(e) => setWorkLocation(e.target.value)}
+                placeholder="e.g. Central Campus"
+                maxLength={120}
+                className={inputClass}
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button type="submit" disabled={updateProfile.isPending} className="min-h-11 flex-1">
+                {updateProfile.isPending ? (
+                  <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                ) : null}
+                Save changes
+              </Button>
+              <Button type="button" variant="outline" onClick={cancelEdit} className="min-h-11">
+                <X className="mr-1.5 h-4 w-4" />
+                Cancel
+              </Button>
+            </div>
+          </form>
+        )}
         <Button
           onClick={logout}
           variant="outline"

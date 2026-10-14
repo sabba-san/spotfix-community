@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { RefreshCw, Clock, Users, MapPin, CheckCircle2, AlertTriangle, Activity } from 'lucide-react';
 import { usePublicStatusBoard } from '@/design-revamp/hooks/useReports';
 import { Button } from '@/design-revamp/components/ui/button';
@@ -15,6 +16,24 @@ const PUBLIC_OPEN_STATUSES = new Set(['Assigned', 'In Progress']);
 const PUBLIC_URGENT_PRIORITIES = new Set(['High', 'Critical']);
 
 export type MetricId = 'pending' | 'urgent' | 'cleaners' | 'open' | 'resolved' | 'total';
+
+/** Single source of truth for bucket filtering — shared with the dashboard. */
+export function filterReportsByMetric(reports: any[], metricId: MetricId): any[] {
+  return reports.filter((report: any) => {
+    if (metricId === 'pending') return PUBLIC_PENDING_STATUSES.has(report.status || '');
+    if (metricId === 'urgent') return report.status !== 'Resolved' && PUBLIC_URGENT_PRIORITIES.has(report.priority || '');
+    if (metricId === 'open') return PUBLIC_OPEN_STATUSES.has(report.status || '');
+    if (metricId === 'resolved') return report.status === 'Resolved';
+    if (metricId === 'total') return true;
+    return true;
+  });
+}
+
+const METRIC_IDS: MetricId[] = ['pending', 'urgent', 'cleaners', 'open', 'resolved', 'total'];
+
+function metricFromSearchParam(value: string | null): MetricId {
+  return value && (METRIC_IDS as string[]).includes(value) ? (value as MetricId) : 'urgent';
+}
 
 interface Metric {
   id: MetricId;
@@ -78,7 +97,7 @@ function MetricCard({ metric, active, onClick }: { metric: Metric; active: boole
   );
 }
 
-function CleanerCard({ cleaner }: { cleaner: any }) {
+export function CleanerCard({ cleaner }: { cleaner: any }) {
   const isBusy = cleaner.status === 'Busy';
   return (
     <div className="rounded-xl border bg-card p-4 transition-all hover:shadow-sm">
@@ -110,7 +129,16 @@ function CleanerCard({ cleaner }: { cleaner: any }) {
 
 export function StatusBoard() {
   const { data: board, isLoading, isError, isFetching, refetch } = usePublicStatusBoard();
-  const [activeMetric, setActiveMetric] = useState<MetricId>('urgent');
+  const [searchParams] = useSearchParams();
+  // Keep metric filtering local to the dashboard status board.
+  const [activeMetric, setActiveMetric] = useState<MetricId>(() =>
+    metricFromSearchParam(searchParams.get('metric')),
+  );
+
+  // Stay in sync if the ?metric= param changes while the board is mounted.
+  useEffect(() => {
+    setActiveMetric(metricFromSearchParam(searchParams.get('metric')));
+  }, [searchParams]);
 
   const summary = board?.summary || {
     total: 0,
@@ -137,14 +165,7 @@ export function StatusBoard() {
 
   const activeEntry = metrics.find((m) => m.id === activeMetric) || metrics[0];
 
-  const filteredReports = reports.filter((report: any) => {
-    if (activeEntry.id === 'pending') return PUBLIC_PENDING_STATUSES.has(report.status || '');
-    if (activeEntry.id === 'urgent') return report.status !== 'Resolved' && PUBLIC_URGENT_PRIORITIES.has(report.priority || '');
-    if (activeEntry.id === 'open') return PUBLIC_OPEN_STATUSES.has(report.status || '');
-    if (activeEntry.id === 'resolved') return report.status === 'Resolved';
-    if (activeEntry.id === 'total') return true;
-    return true;
-  });
+  const filteredReports = filterReportsByMetric(reports, activeEntry.id);
 
   const busyCleaners = cleaners.filter((c: any) => c.status === 'Busy');
   const availableCleaners = cleaners.filter((c: any) => c.status !== 'Busy');

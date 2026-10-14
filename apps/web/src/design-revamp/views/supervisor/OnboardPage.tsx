@@ -10,10 +10,12 @@ import {
   ClipboardList,
   Users,
   UserPlus,
+  Home,
   LogOut,
   Loader2,
   CheckCircle2,
   AlertCircle,
+  Send,
 } from 'lucide-react';
 
 export default function SupervisorOnboardPage() {
@@ -74,7 +76,9 @@ export default function SupervisorOnboardPage() {
   };
 
   const navLinks = [
+    { to: '/dashboard', label: 'Dashboard', icon: Home },
     { to: '/supervisor/tasks', label: 'Triage Board', icon: ClipboardList },
+    { to: '/supervisor/dispatch', label: 'Dispatch', icon: Send },
     { to: '/supervisor/workforce', label: 'Workforce Roster', icon: Users },
     { to: '/supervisor/onboard', label: 'Onboard Staff', icon: UserPlus },
   ];
@@ -96,7 +100,7 @@ export default function SupervisorOnboardPage() {
             </div>
           </div>
 
-          <nav className="hidden md:flex items-center gap-1">
+          <nav className="flex max-w-[55vw] items-center gap-1 overflow-x-auto" aria-label="Supervisor navigation">
             {navLinks.map((item) => {
               const isActive = location.pathname === item.to;
               return (

@@ -295,6 +295,20 @@ export async function provisionUser(payload: Record<string, unknown>) {
   });
 }
 
+export interface UpdateProfileMeBody {
+  name?: string;
+  phone?: string;
+  workLocation?: string;
+}
+
+export async function updateProfileMe(body: UpdateProfileMeBody) {
+  return apiRequest('/users/me', {
+    method: 'PATCH',
+    auth: true,
+    body,
+  });
+}
+
 export async function createMasterAccount(payload: { username: string; password: string; name: string }) {
   return apiRequest('/master/create', {
     method: 'POST',

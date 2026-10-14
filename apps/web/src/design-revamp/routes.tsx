@@ -1,4 +1,4 @@
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
 import { Providers } from './providers';
 import { ProtectedRoute, GuestRoute, RoleRoute } from '@/design-revamp/components/layout/RouteGuards';
@@ -7,13 +7,14 @@ import { PublicLayout } from '@/design-revamp/components/layout/PublicLayout';
 const LoginPage = lazy(() => import('./views/auth/LoginPage'));
 const RegisterPage = lazy(() => import('./views/auth/RegisterPage'));
 const MasterLoginPage = lazy(() => import('./views/auth/MasterLoginPage'));
-const StatusBoardPage = lazy(() => import('./views/public/StatusBoardPage'));
 const DashboardPage = lazy(() => import('./views/public/DashboardPage'));
 const SubmitReportPage = lazy(() => import('./views/public/SubmitReportPage'));
 const MyReportsPage = lazy(() => import('./views/public/MyReportsPage'));
+const PublicAccountPage = lazy(() => import('./views/public/AccountPage'));
 const CleanerTasksPage = lazy(() => import('./views/cleaner/TasksPage'));
 const CleanerAccountPage = lazy(() => import('./views/cleaner/AccountPage'));
 const SupervisorTaskBoardPage = lazy(() => import('./views/supervisor/TaskBoardPage'));
+const SupervisorDispatchPage = lazy(() => import('./views/supervisor/DispatchPage'));
 const SupervisorReviewsPage = lazy(() => import('./views/supervisor/ReviewsPage'));
 const SupervisorWorkforcePage = lazy(() => import('./views/supervisor/WorkforcePage'));
 const SupervisorOnboardPage = lazy(() => import('./views/supervisor/OnboardPage'));
@@ -67,11 +68,7 @@ const router = createBrowserRouter([
   },
   {
     path: '/status',
-    element: (
-      <PublicLayout>
-        <StatusBoardPage />
-      </PublicLayout>
-    ),
+    element: <Navigate to="/dashboard" replace />,
   },
   {
     path: '/dashboard',
@@ -97,6 +94,16 @@ const router = createBrowserRouter([
       <ProtectedRoute>
         <PublicLayout>
           <MyReportsPage />
+        </PublicLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/account',
+    element: (
+      <ProtectedRoute>
+        <PublicLayout>
+          <PublicAccountPage />
         </PublicLayout>
       </ProtectedRoute>
     ),
@@ -138,6 +145,14 @@ const router = createBrowserRouter([
     element: (
       <RoleRoute roles={['supervisor']}>
         <SupervisorTaskBoardPage />
+      </RoleRoute>
+    ),
+  },
+  {
+    path: '/supervisor/dispatch',
+    element: (
+      <RoleRoute roles={['supervisor']}>
+        <SupervisorDispatchPage />
       </RoleRoute>
     ),
   },

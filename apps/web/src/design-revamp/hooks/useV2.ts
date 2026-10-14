@@ -18,6 +18,8 @@ import {
   rejectSupervisorReportV2Authed,
   rejectVolunteerRequestV2,
   requestVolunteerV2,
+  updateProfileMe,
+  type UpdateProfileMeBody,
 } from '@/design-revamp/lib/api';
 
 // ---- Supervisor ----
@@ -186,6 +188,18 @@ export function useAssignRoleV2() {
     mutationFn: ({ userId, role }: { userId: string; role: 'supervisor' | 'cleaner' }) =>
       assignAdminRoleV2Authed(userId, role),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['v2', 'admin'] }),
+  });
+}
+
+// ---- Profile (v1 self-service) ----
+
+export function useUpdateProfile() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: UpdateProfileMeBody) => updateProfileMe(body),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['v2', 'notifications'] });
+    },
   });
 }
 

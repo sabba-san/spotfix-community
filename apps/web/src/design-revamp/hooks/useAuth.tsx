@@ -12,6 +12,21 @@ import {
   revokeV2Device,
   type User,
 } from '@/design-revamp/lib/api';
+import { toast } from 'sonner';
+
+type LoginRole = 'public' | 'cleaner' | 'supervisor' | 'master';
+
+const ROLE_MISMATCH_MESSAGE = 'Unauthorized: Please use the correct login portal for your role.';
+
+function requireLoginRole(user: User, expectedRole?: LoginRole) {
+  if (expectedRole && user.role !== expectedRole) {
+    clearSession();
+    clearV2Session();
+    toast.error(ROLE_MISMATCH_MESSAGE);
+    throw new Error(ROLE_MISMATCH_MESSAGE);
+  }
+  return user;
+}
 
 /** Best-effort v2 workflow session upgrade after a v1 user sign-in. */
 function upgradeV2Session() {
@@ -28,10 +43,10 @@ interface AuthState {
 }
 
 interface AuthContextValue extends AuthState {
-  login: (identifier: string, password: string) => Promise<User>;
+  login: (identifier: string, password: string, expectedRole?: LoginRole) => Promise<User>;
   register: (data: { name: string; email: string; idNumber: string; phone: string; password: string }) => Promise<User>;
-  loginWithGoogle: (idToken: string) => Promise<User>;
-  loginMaster: (username: string, password: string) => Promise<User>;
+  loginWithGoogle: (idToken: string, expectedRole?: LoginRole) => Promise<User>;
+  loginMaster: (username: string, password: string, expectedRole?: LoginRole) => Promise<User>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -62,8 +77,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => { cancelled = true; };
   }, []);
 
-  const login = useCallback(async (identifier: string, password: string) => {
+  const login = useCallback(async (identifier: string, password: string, expectedRole?: LoginRole) => {
     const nextUser = await apiLogin({ identifier, password });
+    requireLoginRole(nextUser, expectedRole);
     setUser(nextUser);
     upgradeV2Session();
     return nextUser;
@@ -76,15 +92,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return nextUser;
   }, []);
 
-  const loginWithGoogle = useCallback(async (idToken: string) => {
+  const loginWithGoogle = useCallback(async (idToken: string, expectedRole?: LoginRole) => {
     const nextUser = await apiGoogleLogin(idToken);
+    requireLoginRole(nextUser, expectedRole);
     setUser(nextUser);
     upgradeV2Session();
     return nextUser;
   }, []);
 
-  const loginMaster = useCallback(async (username: string, password: string) => {
+  const loginMaster = useCallback(async (username: string, password: string, expectedRole?: LoginRole) => {
     const nextUser = await apiMasterLogin({ username, password });
+    requireLoginRole(nextUser, expectedRole);
     setUser(nextUser);
     return nextUser;
   }, []);

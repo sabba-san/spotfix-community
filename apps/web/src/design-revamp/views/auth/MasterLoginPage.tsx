@@ -23,7 +23,7 @@ export default function MasterLoginPage() {
     setError('');
 
     try {
-      await loginMaster(username.trim(), password);
+      await loginMaster(username.trim(), password, 'master');
       navigate('/admin');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');

@@ -45,6 +45,12 @@ export const UserIdParamSchema = z.object({
     userId: z.string().min(1)
 });
 
+export const UpdateMeSchema = z.object({
+    name: z.string().min(2).max(120).optional(),
+    phone: z.string().max(30).optional(),
+    workLocation: z.string().max(120).optional()
+}).strict();
+
 export const RegisterDeviceSchema = z.object({
     token: z.string().min(1),
     platform: devicePlatform.default('android'),
@@ -156,6 +162,7 @@ export const GoogleSignInSchema = z.object({
 
 export type RegisterPublicInput = z.infer<typeof RegisterPublicSchema>;
 export type ProvisionUserInput = z.infer<typeof ProvisionUserSchema>;
+export type UpdateMeInput = z.infer<typeof UpdateMeSchema>;
 export type UserLoginInput = z.infer<typeof UserLoginSchema>;
 export type RefreshTokenInput = z.infer<typeof RefreshTokenSchema>;
 export type RegisterDeviceInput = z.infer<typeof RegisterDeviceSchema>;

@@ -42,7 +42,7 @@ export default function RegisterPage() {
           setIsLoading(true);
           setError('');
           try {
-            const user = await loginWithGoogle(response.credential);
+            const user = await loginWithGoogle(response.credential, 'public');
             if (user.role === 'supervisor') navigate('/supervisor');
             else if (user.role === 'cleaner') navigate('/cleaner');
             else navigate('/');

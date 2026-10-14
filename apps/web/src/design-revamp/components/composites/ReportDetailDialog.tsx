@@ -11,6 +11,7 @@ import {
   useSupervisorCleanersV2,
   useVolunteerRequestsV2,
 } from '@/design-revamp/hooks/useV2';
+import { VolunteerQueue } from '@/design-revamp/components/composites/VolunteerQueue';
 import {
   canAssignV2Status,
   canReviewV2Status,
@@ -153,44 +154,24 @@ export function ReportDetailDialog({ reportId, reportTitle, onClose }: ReportDet
                   <HandHelping className="h-4 w-4" />
                   Volunteer requests ({pendingVolunteers.length})
                 </h3>
-                {pendingVolunteers.map((v) => (
-                  <div key={v.id} className="flex items-center justify-between gap-2 rounded-lg bg-card px-2.5 py-2 text-xs">
-                    <div>
-                      <p className="font-semibold">{v.cleaner_name ?? v.cleaner_user_id}</p>
-                      {v.note && <p className="text-muted-foreground">{v.note}</p>}
-                    </div>
-                    <div className="flex shrink-0 gap-1.5">
-                      <Button
-                        size="sm"
-                        className="h-7 px-2 text-[11px]"
-                        disabled={busy}
-                        onClick={() =>
-                          runAction(() =>
-                            assignSupervisorReportV2Wrapper(v.cleaner_user_id),
-                          )
-                        }
-                      >
-                        Approve
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-7 px-2 text-[11px]"
-                        disabled={rejectVolunteerMutation.isPending}
-                        onClick={() =>
-                          runAction(() =>
-                            rejectVolunteerMutation.mutateAsync({
-                              requestId: v.id,
-                              reason: 'Not needed right now',
-                            }),
-                          )
-                        }
-                      >
-                        Decline
-                      </Button>
-                    </div>
-                  </div>
-                ))}
+                <VolunteerQueue
+                  requests={pendingVolunteers}
+                  approvePending={busy}
+                  declinePending={rejectVolunteerMutation.isPending}
+                  onApprove={(v) =>
+                    runAction(() =>
+                      assignSupervisorReportV2Wrapper(v.cleaner_user_id),
+                    )
+                  }
+                  onDecline={(v, reason) =>
+                    runAction(() =>
+                      rejectVolunteerMutation.mutateAsync({
+                        requestId: v.id,
+                        reason,
+                      }),
+                    )
+                  }
+                />
               </section>
             )}
 

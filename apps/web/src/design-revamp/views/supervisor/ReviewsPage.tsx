@@ -17,12 +17,14 @@ import {
   ClipboardList,
   Users,
   UserPlus,
+  Home,
   Inbox,
   RefreshCw,
   LogOut,
   MapPin,
   CheckCircle2,
   CircleUserRound,
+  Send,
 } from 'lucide-react';
 
 /** Supervisor review queue — resolutions awaiting endorsement + volunteer requests. */
@@ -35,7 +37,9 @@ export default function SupervisorReviewsPage() {
   const reports = reviewsQuery.data?.reports ?? [];
 
   const navLinks = [
+    { to: '/dashboard', label: 'Dashboard', icon: Home },
     { to: '/supervisor/tasks', label: 'Triage Board', icon: ClipboardList },
+    { to: '/supervisor/dispatch', label: 'Dispatch', icon: Send },
     { to: '/supervisor/reviews', label: 'Reviews', icon: Inbox, badge: reports.length },
     { to: '/supervisor/workforce', label: 'Workforce Roster', icon: Users },
     { to: '/supervisor/onboard', label: 'Onboard Staff', icon: UserPlus },
@@ -55,7 +59,7 @@ export default function SupervisorReviewsPage() {
               <span className="hidden sm:inline text-xs text-muted-foreground ml-2">Reviews</span>
             </div>
           </div>
-          <nav className="hidden md:flex items-center gap-1">
+          <nav className="flex max-w-[55vw] items-center gap-1 overflow-x-auto" aria-label="Supervisor navigation">
             {navLinks.map((item) => {
               const isActive = location.pathname === item.to;
               return (

@@ -62,6 +62,12 @@ export interface ProvisionUserInput {
     role: UserRole;
 }
 
+export interface UpdateMeInput {
+    name?: string;
+    phone?: string;
+    workLocation?: string;
+}
+
 export const usersService = {
     async registerPublic(input: RegisterPublicInput): Promise<SerializedUser> {
         const existingById = await usersRepository.findByIdNumber(input.idNumber);
@@ -138,5 +144,29 @@ export const usersService = {
         }
 
         return serializeUserAccount(user);
+    },
+
+    async updateMe(userId: string, input: UpdateMeInput): Promise<SerializedUser> {
+        const existing = await usersRepository.findById(userId);
+        if (!existing) {
+            throw new NotFoundError('User not found');
+        }
+
+        const data: { name?: string; phone?: string; workLocation?: string } = {};
+        if (input.name !== undefined) data.name = input.name.trim();
+        if (input.phone !== undefined) data.phone = input.phone.trim();
+        if (input.workLocation !== undefined) data.workLocation = input.workLocation.trim();
+
+        // No-op body (e.g. {}) returns the current profile unchanged.
+        if (Object.keys(data).length === 0) {
+            return serializeUserAccount(existing);
+        }
+
+        const updated = await usersRepository.updateProfile(userId, data);
+        if (!updated) {
+            throw new NotFoundError('User not found');
+        }
+
+        return serializeUserAccount(updated);
     }
 };

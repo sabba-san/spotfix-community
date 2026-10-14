@@ -19,6 +19,7 @@ import {
   Users,
   Server,
   CircleUserRound,
+  Home,
 } from 'lucide-react';
 
 export default function AdminOverviewPage() {
@@ -39,6 +40,7 @@ export default function AdminOverviewPage() {
   const rejectedCount = (summary.rejected_by_cleaner ?? 0) + (summary.rejected_by_supervisor ?? 0);
 
   const navLinks = [
+    { to: '/dashboard', label: 'Dashboard', icon: Home },
     { to: '/admin/overview', label: 'Overview', icon: LayoutDashboard },
     { to: '/admin/users', label: 'Users', icon: Users2 },
     { to: '/admin/onboard', label: 'Onboarding', icon: UserPlus },
@@ -59,7 +61,7 @@ export default function AdminOverviewPage() {
               <span className="hidden sm:inline text-xs text-muted-foreground ml-2">Admin Administration</span>
             </div>
           </div>
-          <nav className="hidden md:flex items-center gap-1">
+          <nav className="flex max-w-[55vw] items-center gap-1 overflow-x-auto" aria-label="Admin navigation">
             {navLinks.map((item) => {
               const isActive = location.pathname === item.to;
               return (

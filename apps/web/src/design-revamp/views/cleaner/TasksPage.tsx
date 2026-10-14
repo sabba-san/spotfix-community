@@ -35,6 +35,8 @@ import {
   ListTodo,
   Search,
   X,
+  Home,
+  CircleUserRound,
 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 
@@ -239,7 +241,7 @@ export default function CleanerTasksPage() {
   return (
     <div className="min-h-[100dvh] bg-background text-foreground flex flex-col">
       <header className="sticky top-0 z-40 border-b border-border/80 bg-background/95 backdrop-blur-md">
-        <div className="mx-auto flex h-14 max-w-4xl items-center justify-between px-4 sm:px-6">
+        <div className="mx-auto flex min-h-14 max-w-4xl flex-wrap items-center justify-between gap-x-3 gap-y-2 px-4 py-2 sm:px-6">
           <div className="flex items-center gap-2.5">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600 font-bold">
               <ClipboardCheck className="h-4.5 w-4.5" />
@@ -249,6 +251,29 @@ export default function CleanerTasksPage() {
               <span className="hidden sm:inline text-xs text-muted-foreground ml-2">Cleaner Operations</span>
             </div>
           </div>
+          <nav className="order-3 flex w-full items-center gap-1 overflow-x-auto md:order-none md:w-auto" aria-label="Cleaner navigation">
+            {[
+              { to: '/dashboard', label: 'Dashboard', icon: Home },
+              { to: '/cleaner/tasks', label: 'Tasks', icon: ListTodo },
+              { to: '/cleaner/account', label: 'My Profile', icon: CircleUserRound },
+            ].map((item) => {
+              const isActive = location.pathname === item.to;
+              return (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  className={`flex min-h-10 shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-colors ${
+                    isActive
+                      ? 'bg-primary/10 text-primary font-semibold'
+                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                  }`}
+                >
+                  <item.icon className="h-3.5 w-3.5" />
+                  {item.label}
+                </Link>
+              );
+            })}
+          </nav>
           <div className="flex items-center gap-2">
             <span className="text-xs text-muted-foreground font-medium hidden sm:inline">{user?.name}</span>
             <Button variant="ghost" size="sm" onClick={logout} className="h-8 gap-1.5 px-2 text-xs text-muted-foreground hover:text-destructive">
@@ -389,10 +414,6 @@ export default function CleanerTasksPage() {
           )
         )}
 
-        <nav className="flex justify-center gap-4 border-t pt-4 text-xs">
-          <Link to="/cleaner/tasks" className={`font-medium ${location.pathname === '/cleaner/tasks' ? 'text-primary' : 'text-muted-foreground'}`}>Tasks</Link>
-          <Link to="/cleaner/account" className="text-muted-foreground hover:text-foreground">My Profile</Link>
-        </nav>
       </main>
 
       {openId && <DetailModal reportId={openId} onClose={() => setOpenId(null)} />}

@@ -41,6 +41,11 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [googleReady, setGoogleReady] = useState(false);
   const googleInitialized = useRef(false);
+  const activeTabRef = useRef(activeTab);
+
+  useEffect(() => {
+    activeTabRef.current = activeTab;
+  }, [activeTab]);
 
   useEffect(() => {
     if (!GOOGLE_CLIENT_ID || googleInitialized.current) return;
@@ -55,7 +60,13 @@ export default function LoginPage() {
             if (!response?.credential) return;
             setIsLoading(true);
             try {
-              const user = await loginWithGoogle(response.credential);
+              const googleTab = activeTabRef.current;
+              const expectedRole = googleTab === 'staff-login'
+                ? 'supervisor'
+                : googleTab === 'reporter-login' || googleTab === 'register'
+                  ? 'public'
+                  : undefined;
+              const user = await loginWithGoogle(response.credential, expectedRole);
               if (user.role === 'master') navigate('/admin');
               else if (user.role === 'supervisor') navigate('/supervisor');
               else if (user.role === 'cleaner') navigate('/cleaner');
@@ -114,7 +125,12 @@ export default function LoginPage() {
     setError('');
 
     try {
-      const user = await login(identifier.trim(), password);
+      const expectedRole = activeTab === 'staff-login'
+        ? 'supervisor'
+        : activeTab === 'cleaner-login'
+          ? 'cleaner'
+          : 'public';
+      const user = await login(identifier.trim(), password, expectedRole);
       if (user.role === 'master') navigate('/admin');
       else if (user.role === 'supervisor') navigate('/supervisor');
       else if (user.role === 'cleaner') navigate('/cleaner');
@@ -157,7 +173,7 @@ export default function LoginPage() {
     setError('');
 
     try {
-      await loginMaster(masterUsername.trim(), masterPassword);
+      await loginMaster(masterUsername.trim(), masterPassword, 'master');
       navigate('/admin');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');

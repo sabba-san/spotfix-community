@@ -15,6 +15,7 @@ import {
     ProvisionUserSchema,
     RefreshTokenSchema,
     RegisterPublicSchema,
+    UpdateMeSchema,
     UserIdParamSchema,
     UserLoginSchema
 } from '../schemas';
@@ -121,6 +122,18 @@ export function buildUsersRouter(): Router {
         requireRoles('supervisor', 'master'),
         asyncHandler(async (_req, res) => {
             res.json(await usersService.listAll());
+        })
+    );
+
+    // NOTE: PATCH /me must stay above GET /:userId so Express does not treat
+    // "me" as a userId param.
+    router.patch(
+        '/me',
+        requireAuth,
+        requireRoles('public', 'supervisor', 'cleaner'),
+        validate(UpdateMeSchema, 'body'),
+        asyncHandler(async (req, res) => {
+            res.json(await usersService.updateMe(req.auth!.userId, req.body));
         })
     );
 
