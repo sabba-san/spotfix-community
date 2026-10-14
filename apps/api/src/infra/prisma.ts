@@ -24,6 +24,7 @@ const TENANT_SCOPED_MODELS = new Set<string>([
     'ReportAttachmentV2',
     'ReportEventV2',
     'NotificationV2',
+    'VolunteerRequestV2',
     'TenantGeoV2',
     'CampusLandmarkV2'
 ]);

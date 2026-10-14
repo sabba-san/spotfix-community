@@ -3,6 +3,7 @@
  * snake_case JSON shape that android_v2_api_v2.md §10–§13 specifies.
  */
 import type { NotificationV2, ReportAttachmentV2, ReportEventV2, ReportV2 } from '@prisma/client';
+import type { VolunteerRequestWithRelations } from '../volunteer/volunteer.service';
 
 export function serializeReport(r: ReportV2) {
     return {
@@ -81,5 +82,30 @@ export function mutationEnvelope(args: {
         report: serializeReport(args.report),
         event: { id: args.event.id, type: args.event.eventType },
         sync: { cursor: args.cursor }
+    };
+}
+
+export function serializeVolunteerRequest(r: VolunteerRequestWithRelations) {
+    return {
+        id: r.id,
+        report_id: r.reportId,
+        cleaner_user_id: r.cleanerUserId,
+        cleaner_name: r.cleaner?.name ?? null,
+        note: r.note,
+        status: r.status,
+        decided_by_user_id: r.decidedByUserId,
+        decided_at: r.decidedAt ? r.decidedAt.toISOString() : null,
+        created_at: r.createdAt.toISOString(),
+        updated_at: r.updatedAt.toISOString(),
+        report: r.report
+            ? {
+                  id: r.report.id,
+                  title: r.report.title,
+                  status: r.report.status,
+                  location_address: r.report.locationAddress,
+                  version: r.report.version,
+                  updated_at: r.report.updatedAt.toISOString()
+              }
+            : null
     };
 }

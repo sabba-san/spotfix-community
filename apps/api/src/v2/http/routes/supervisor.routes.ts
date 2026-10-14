@@ -15,10 +15,16 @@ import {
     AssignCleanerSchema,
     EndorseSchema,
     RejectSchema,
-    SupervisorListQuerySchema
+    SupervisorListQuerySchema,
+    VolunteerListQuerySchema
 } from '../schemas';
-import { mutationEnvelope, serializeReportSummary } from '../serializers';
+import { mutationEnvelope, serializeReportSummary, serializeVolunteerRequest } from '../serializers';
 import { validateV2 } from '../validate';
+import {
+    listVolunteerRequests,
+    rejectVolunteerRequest,
+    type VolunteerRequestStatus
+} from '../../volunteer/volunteer.service';
 
 export function buildSupervisorV2Router(): Router {
     const router = Router();
@@ -82,6 +88,41 @@ export function buildSupervisorV2Router(): Router {
             const ctx = req.v2Auth!;
             const result = await supervisorReject(ctx, String(req.params.id), req.body);
             ok(res, mutationEnvelope(result));
+        })
+    );
+
+    // GET /api/v2/supervisor/volunteer-requests?status=&page=&limit=
+    // Queue of cleaner volunteer requests (default: all, newest first).
+    router.get(
+        '/volunteer-requests',
+        validateV2(VolunteerListQuerySchema, 'query'),
+        asyncHandler(async (req, res) => {
+            const q = req.query as { status?: VolunteerRequestStatus; page?: number; limit?: number };
+            const { requests, total, page, limit } = await listVolunteerRequests(q);
+            ok(
+                res,
+                { volunteer_requests: requests.map(serializeVolunteerRequest) },
+                { page, limit, total }
+            );
+        })
+    );
+
+    // PATCH /api/v2/supervisor/volunteer-requests/:id/reject
+    // Decline a pending request. Approval happens via PATCH /reports/:id/assign.
+    router.patch(
+        '/volunteer-requests/:id/reject',
+        validateV2(RejectSchema, 'body'),
+        asyncHandler(async (req, res) => {
+            const ctx = req.v2Auth!;
+            const { request, cursor } = await rejectVolunteerRequest(
+                ctx,
+                String(req.params.id),
+                req.body
+            );
+            ok(res, {
+                volunteer_request: serializeVolunteerRequest(request),
+                sync: { cursor }
+            });
         })
     );
 

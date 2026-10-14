@@ -15,6 +15,7 @@ import { pushNotificationsService } from '../../domain/notifications/push-notifi
 import { prisma } from '../../infra/prisma';
 import { currentTenantId } from '../../infra/tenant-context';
 import { resolveLocation } from '../geo/geo.service';
+import { markRequestsOnAssign } from '../volunteer/volunteer.service';
 import {
     ReportNotFoundError,
     StaleVersionError,
@@ -52,7 +53,10 @@ export type ReportEventType =
     | 'supervisor_endorsed'
     | 'supervisor_rejected'
     | 'report_closed'
-    | 'report_cancelled';
+    | 'report_cancelled'
+    | 'volunteer_requested'
+    | 'volunteer_approved'
+    | 'volunteer_rejected';
 
 export interface AttachmentInput {
     file_url: string;
@@ -205,7 +209,9 @@ export async function getReportByIdForActor(
         isAssignedSupervisor ||
         isAssignedCleaner ||
         ctx.roles.supervisor ||
-        ctx.roles.admin;
+        ctx.roles.admin ||
+        // Cleaners may preview unassigned (submitted) reports to volunteer.
+        (ctx.roles.cleaner && report.status === 'submitted');
     if (!canSee) throw new ReportNotFoundError();
 
     const [attachments, events] = await Promise.all([
@@ -495,6 +501,13 @@ export async function assignCleaner(
             eventId: event.id,
             title: 'Your report has been assigned',
             body: report.title
+        });
+
+        // Approval flow: resolve any pending volunteer requests for this report.
+        await markRequestsOnAssign(tx, {
+            reportId: report.id,
+            cleanerUserId: args.cleaner_user_id,
+            supervisorUserId: ctx.userId
         });
 
         return {

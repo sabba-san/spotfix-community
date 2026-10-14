@@ -33,6 +33,7 @@ model Tenant {
   reportAttachmentsV2 ReportAttachmentV2[]
   reportEventsV2  ReportEventV2[]
   notificationsV2 NotificationV2[]
+  volunteerRequestsV2 VolunteerRequestV2[]
   geoV2           TenantGeoV2?
   landmarksV2     CampusLandmarkV2[]
 }
@@ -76,6 +77,7 @@ model UserAccount {
   reportAttachmentsV2 ReportAttachmentV2[] @relation("ReportAttachmentV2Uploader")
   reportEventsV2     ReportEventV2[]     @relation("ReportEventV2Actor")
   notificationsV2    NotificationV2[]    @relation("NotificationV2User")
+  volunteerRequestsV2 VolunteerRequestV2[] @relation("VolunteerRequestV2Cleaner")
 
   @@unique([tenantId, idNumber])
   @@unique([tenantId, googleSub])
@@ -283,6 +285,7 @@ model ReportV2 {
   attachments           ReportAttachmentV2[]
   events                ReportEventV2[]
   notifications         NotificationV2[]
+  volunteerRequests     VolunteerRequestV2[]
 
   @@index([tenantId, reporterUserId, createdAt(sort: Desc)])
   @@index([tenantId, assignedCleanerId, status])
@@ -329,6 +332,34 @@ model ReportEventV2 {
 
   @@index([tenantId, seq])
   @@index([tenantId, reportId, createdAt(sort: Desc)])
+}
+
+// ---- Volunteer requests (cleaner opt-in pool, supervisor approval) --------
+// A cleaner volunteers for a `submitted` (unassigned) report; a supervisor
+// approves by assigning (existing PATCH /supervisor/reports/:id/assign) or
+// rejects the request. Queryable table (not event-only) so the supervisor
+// queue and per-cleaner pending state are cheap to list.
+
+model VolunteerRequestV2 {
+  id            String   @id @default(cuid())
+  tenantId      String
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  reportId      String
+  report        ReportV2 @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  cleanerUserId String
+  cleaner       UserAccount @relation("VolunteerRequestV2Cleaner", fields: [cleanerUserId], references: [id], onDelete: Cascade)
+  // Optional note from the cleaner (availability, zone, etc.).
+  note          String?
+  // pending | approved | rejected
+  status        String   @default("pending")
+  decidedByUserId String?
+  decidedAt     DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([tenantId, status, createdAt(sort: Desc)])
+  @@index([tenantId, reportId, status])
+  @@index([tenantId, cleanerUserId, status])
 }
 
 // ---- Geo (campus boundary + landmarks, v2) --------------------------------

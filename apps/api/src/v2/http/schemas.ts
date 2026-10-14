@@ -98,6 +98,16 @@ export const RejectSchema = z.object({
     reason: z.string().trim().min(3).max(500)
 });
 
+export const VolunteerRequestNoteSchema = z.object({
+    note: z.string().trim().max(500).optional()
+});
+
+export const VolunteerListQuerySchema = z.object({
+    status: z.enum(['pending', 'approved', 'rejected']).optional(),
+    page: z.coerce.number().int().positive().max(10_000).optional(),
+    limit: z.coerce.number().int().positive().max(100).optional()
+});
+
 export const ResolveTaskSchema = z.object({
     note: z.string().max(500).optional(),
     attachments: z.array(AttachmentInputSchema).max(10).optional()
