@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-const platform = z.enum(['android']);
+const platform = z.enum(['android', 'web']);
 
 export const RegisterDeviceV2Schema = z.object({
     platform: platform.default('android'),
@@ -29,6 +29,10 @@ export const LogoutDeviceV2Schema = z.object({
 export const GoogleLoginV2Schema = z.object({
     device_id: z.string().min(1),
     id_token: z.string().min(1)
+});
+
+export const ExchangeV1Schema = z.object({
+    device_id: z.string().min(1)
 });
 
 export const AdminListUsersQuerySchema = z.object({

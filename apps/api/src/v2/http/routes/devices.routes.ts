@@ -19,7 +19,7 @@ export function buildDevicesV2Router(): Router {
         validateV2(RegisterDeviceV2Schema, 'body'),
         asyncHandler(async (req, res) => {
             const body = req.body as {
-                platform: 'android';
+                platform: 'android' | 'web';
                 device_name?: string;
                 device_fingerprint: string;
                 fcm_token?: string;

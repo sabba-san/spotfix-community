@@ -14,11 +14,15 @@ const MyReportsPage = lazy(() => import('./views/public/MyReportsPage'));
 const CleanerTasksPage = lazy(() => import('./views/cleaner/TasksPage'));
 const CleanerAccountPage = lazy(() => import('./views/cleaner/AccountPage'));
 const SupervisorTaskBoardPage = lazy(() => import('./views/supervisor/TaskBoardPage'));
+const SupervisorReviewsPage = lazy(() => import('./views/supervisor/ReviewsPage'));
 const SupervisorWorkforcePage = lazy(() => import('./views/supervisor/WorkforcePage'));
 const SupervisorOnboardPage = lazy(() => import('./views/supervisor/OnboardPage'));
+const SupervisorAccountPage = lazy(() => import('./views/supervisor/AccountPage'));
 const AdminOverviewPage = lazy(() => import('./views/admin/OverviewPage'));
 const AdminUsersPage = lazy(() => import('./views/admin/UsersPage'));
 const AdminOnboardPage = lazy(() => import('./views/admin/OnboardPage'));
+const AdminControlPage = lazy(() => import('./views/admin/ControlPage'));
+const AdminAccountPage = lazy(() => import('./views/admin/AccountPage'));
 
 function PageLoader() {
   return (
@@ -138,6 +142,14 @@ const router = createBrowserRouter([
     ),
   },
   {
+    path: '/supervisor/reviews',
+    element: (
+      <RoleRoute roles={['supervisor']}>
+        <SupervisorReviewsPage />
+      </RoleRoute>
+    ),
+  },
+  {
     path: '/supervisor/workforce',
     element: (
       <RoleRoute roles={['supervisor']}>
@@ -150,6 +162,14 @@ const router = createBrowserRouter([
     element: (
       <RoleRoute roles={['supervisor']}>
         <SupervisorOnboardPage />
+      </RoleRoute>
+    ),
+  },
+  {
+    path: '/supervisor/account',
+    element: (
+      <RoleRoute roles={['supervisor']}>
+        <SupervisorAccountPage />
       </RoleRoute>
     ),
   },
@@ -182,6 +202,22 @@ const router = createBrowserRouter([
     element: (
       <RoleRoute roles={['master']}>
         <AdminOnboardPage />
+      </RoleRoute>
+    ),
+  },
+  {
+    path: '/admin/control',
+    element: (
+      <RoleRoute roles={['master']}>
+        <AdminControlPage />
+      </RoleRoute>
+    ),
+  },
+  {
+    path: '/admin/account',
+    element: (
+      <RoleRoute roles={['master']}>
+        <AdminAccountPage />
       </RoleRoute>
     ),
   },

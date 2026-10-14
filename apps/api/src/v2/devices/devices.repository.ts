@@ -8,7 +8,7 @@ import { prisma } from '../../infra/prisma';
 export type DeviceV2Row = DeviceV2;
 
 export interface RegisterDeviceInput {
-    platform: 'android';
+    platform: 'android' | 'web';
     deviceName?: string;
     deviceFingerprint: string;
     fcmToken?: string;

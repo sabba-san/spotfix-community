@@ -3,6 +3,7 @@ import { Router } from 'express';
 import { asyncHandler } from '../../../http/asyncHandler';
 import {
     cleanerAccept,
+    cleanerHistory,
     cleanerReject,
     cleanerResolve,
     cleanerStart,
@@ -79,6 +80,24 @@ export function buildCleanerV2Router(): Router {
             const ctx = req.v2Auth!;
             const result = await cleanerResolve(ctx, String(req.params.id), req.body);
             ok(res, mutationEnvelope(result));
+        })
+    );
+
+    // GET /api/v2/cleaner/history?page=&limit=
+    // Completed work: resolutions submitted and their outcomes.
+    router.get(
+        '/history',
+        validateV2(PageQuerySchema, 'query'),
+        asyncHandler(async (req, res) => {
+            const ctx = req.v2Auth!;
+            const q = req.query as { page?: number; limit?: number };
+            const { tasks, total, page, limit } = await cleanerHistory(ctx, q);
+            ok(res, {
+                tasks: tasks.map(serializeReportSummary),
+                total,
+                page,
+                limit
+            });
         })
     );
 

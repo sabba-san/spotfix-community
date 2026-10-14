@@ -5,9 +5,10 @@ import { authRateLimiter } from '../../../http/middleware/rateLimit';
 import { requireTenant } from '../../../http/middleware/tenant';
 import { v2AuthService } from '../../auth/v2-auth.service';
 import { loadUserRoles } from '../../auth/roles';
+import { UnauthenticatedError } from '../../errors';
 import { ok } from '../envelope';
 import { validateV2 } from '../validate';
-import { LoginV2Schema, GoogleLoginV2Schema, LogoutDeviceV2Schema, RefreshV2Schema } from '../schemas';
+import { LoginV2Schema, GoogleLoginV2Schema, LogoutDeviceV2Schema, RefreshV2Schema, ExchangeV1Schema } from '../schemas';
 import { requireV2Auth } from '../auth.middleware';
 
 function serializeUserForAuth(user: {
@@ -127,6 +128,38 @@ export function buildAuthV2Router(): Router {
             const body = req.body as { device_id: string };
             await v2AuthService.logoutDevice({ deviceId: body.device_id });
             ok(res, { message: 'Device session revoked.' });
+        })
+    );
+
+    // POST /api/v2/auth/exchange
+    // Web bridge: Authorization: Bearer <v1 JWT>, body { device_id }.
+    // Returns a device-bound v2 session in the same shape as password login.
+    router.post(
+        '/exchange',
+        requireTenant,
+        validateV2(ExchangeV1Schema, 'body'),
+        asyncHandler(async (req, res) => {
+            const header = req.headers.authorization;
+            const match = typeof header === 'string' ? /^Bearer\s+(.+)$/i.exec(header.trim()) : null;
+            if (!match?.[1]) {
+                throw new UnauthenticatedError('V1 bearer token is required.');
+            }
+            const body = req.body as { device_id: string };
+            const result = await v2AuthService.exchangeV1({
+                deviceId: body.device_id,
+                v1Token: match[1]
+            });
+            ok(res, {
+                user: serializeUserForAuth(result.user, result.roles),
+                device: { id: result.device.id, platform: result.device.platform },
+                session: {
+                    access_token: result.envelope.accessToken,
+                    refresh_token: result.envelope.refreshToken,
+                    token_type: result.envelope.tokenType,
+                    expires_in: result.envelope.expiresIn,
+                    refresh_expires_in: result.envelope.refreshExpiresIn
+                }
+            });
         })
     );
 

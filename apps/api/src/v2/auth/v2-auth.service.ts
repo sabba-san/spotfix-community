@@ -15,6 +15,7 @@ import {
     InvalidCredentialsError
 } from '../../errors';
 import { verifyGoogleIdToken } from '../../domain/auth/google';
+import { authService } from '../../domain/auth/auth.service';
 import { verifyPassword } from '../../domain/auth/password';
 import { usersRepository, type UserAccountRow } from '../../domain/users/users.repository';
 import {
@@ -237,6 +238,39 @@ export const v2AuthService = {
 
     async logoutDevice(input: { deviceId: string }): Promise<void> {
         await deviceSessionsRepository.revokeAllForDevice(input.deviceId);
+    },
+
+    /**
+     * Web bridge: exchange a valid v1 user JWT for a device-bound v2 session.
+     * Lets the browser portal (which signs in via the v1 password/Google/
+     * id-number flows) adopt the v2 workflow API without re-asking for
+     * credentials. Master subjects have no UserAccount and are rejected —
+     * master web flows keep using the v1 API.
+     */
+    async exchangeV1(input: { deviceId: string; v1Token: string }): Promise<V2LoginResult> {
+        const device = await devicesV2Repository.findById(input.deviceId);
+        if (!device || !device.isActive) {
+            throw new DeviceNotRegisteredError();
+        }
+
+        let user;
+        try {
+            const v1Ctx = await authService.fromAccessToken(input.v1Token);
+            if (v1Ctx.authType !== 'user') {
+                throw new InvalidTokenErrorV2('Only user sessions can be exchanged for v2.');
+            }
+            const found = await usersRepository.findById(v1Ctx.userId);
+            if (!found) throw new InvalidTokenErrorV2('User not found.');
+            user = found;
+        } catch (err) {
+            if (err instanceof InvalidTokenErrorV2) throw err;
+            throw new InvalidTokenErrorV2('Invalid v1 session.');
+        }
+
+        const { sessionId, envelope } = await issueSessionAndEnvelope({ user, device });
+        const { roles } = await loadUserRoles(user.id, user.role);
+
+        return { user, device, sessionId, envelope, roles };
     },
 
     /**

@@ -60,7 +60,6 @@ export default function AdminOnboardPage() {
             workId: workId.trim() || idNumber.trim(),
             phone: phone.trim(),
             workLocation: workLocation.trim(),
-            supervisorId: user?.id,
           });
         } catch {
           // ignore duplicate cleaner profile creation if handled by provision
@@ -79,9 +78,11 @@ export default function AdminOnboardPage() {
   };
 
   const navLinks = [
-    { to: '/admin/overview', label: 'Control Center', icon: LayoutDashboard },
-    { to: '/admin/users', label: 'User Directory', icon: Users2 },
-    { to: '/admin/onboard', label: 'Staff Provisioning', icon: UserPlus },
+    { to: '/admin/overview', label: 'Overview', icon: LayoutDashboard },
+    { to: '/admin/users', label: 'Users', icon: Users2 },
+    { to: '/admin/onboard', label: 'Onboarding', icon: UserPlus },
+    { to: '/admin/control', label: 'Control', icon: KeyRound },
+    { to: '/admin/account', label: 'Account', icon: CircleUserRound },
   ];
 
   return (

@@ -7,8 +7,19 @@ import {
   loginMaster as apiMasterLogin,
   logout as apiLogout,
   clearSession,
+  clearV2Session,
+  ensureV2Session,
+  revokeV2Device,
   type User,
 } from '@/design-revamp/lib/api';
+
+/** Best-effort v2 workflow session upgrade after a v1 user sign-in. */
+function upgradeV2Session() {
+  ensureV2Session().catch(() => {
+    // Staff pages degrade gracefully when the v2 session is unavailable
+    // (e.g. master logins, which intentionally stay on the v1 API).
+  });
+}
 
 interface AuthState {
   user: User | null;
@@ -38,9 +49,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const sessionUser = await bootstrapSession();
         if (!cancelled && sessionUser) {
           setUser(sessionUser);
+          if (sessionUser.authType !== 'master') upgradeV2Session();
         }
       } catch {
         clearSession();
+        clearV2Session();
       } finally {
         if (!cancelled) setIsLoading(false);
       }
@@ -52,18 +65,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (identifier: string, password: string) => {
     const nextUser = await apiLogin({ identifier, password });
     setUser(nextUser);
+    upgradeV2Session();
     return nextUser;
   }, []);
 
   const register = useCallback(async (data: { name: string; email: string; idNumber: string; phone: string; password: string }) => {
     const nextUser = await apiRegister(data);
     setUser(nextUser);
+    upgradeV2Session();
     return nextUser;
   }, []);
 
   const loginWithGoogle = useCallback(async (idToken: string) => {
     const nextUser = await apiGoogleLogin(idToken);
     setUser(nextUser);
+    upgradeV2Session();
     return nextUser;
   }, []);
 
@@ -75,9 +91,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(async () => {
     try {
+      await revokeV2Device().catch(() => undefined);
       await apiLogout();
     } finally {
       clearSession();
+      clearV2Session();
       setUser(null);
       window.history.replaceState(null, '', '/login');
       window.dispatchEvent(new PopStateEvent('popstate'));

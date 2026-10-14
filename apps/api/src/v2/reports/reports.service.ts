@@ -317,6 +317,32 @@ export async function cleanerTasks(
     return { tasks, total, page, limit };
 }
 
+/**
+ * Completed work for the cleaner's History tab: resolutions submitted and
+ * their outcomes (endorsed / sent back / closed), newest first.
+ */
+export async function cleanerHistory(
+    ctx: V2AuthContext,
+    args: { page?: number; limit?: number } = {}
+): Promise<{ tasks: ReportV2[]; total: number; page: number; limit: number }> {
+    const page = Math.max(1, args.page ?? 1);
+    const limit = Math.min(100, Math.max(1, args.limit ?? 100));
+    const where: Prisma.ReportV2WhereInput = {
+        assignedCleanerId: ctx.userId,
+        status: { in: ['resolved_by_cleaner', 'endorsed_by_supervisor', 'rejected_by_supervisor', 'closed'] }
+    };
+    const [tasks, total] = await Promise.all([
+        prisma.reportV2.findMany({
+            where,
+            orderBy: { updatedAt: 'desc' },
+            skip: (page - 1) * limit,
+            take: limit
+        }),
+        prisma.reportV2.count({ where })
+    ]);
+    return { tasks, total, page, limit };
+}
+
 // ---- Mutations -----------------------------------------------------------
 
 export async function createReport(ctx: V2AuthContext, input: CreateReportInput): Promise<MutationResult> {

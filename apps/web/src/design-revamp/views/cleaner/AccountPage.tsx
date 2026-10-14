@@ -1,5 +1,5 @@
-import CleanerTasksPage from './TasksPage';
+import { AccountCard } from '@/design-revamp/components/composites/AccountCard';
 
-export default function AccountPage() {
-  return <CleanerTasksPage />;
+export default function CleanerAccountPage() {
+  return <AccountCard />;
 }
