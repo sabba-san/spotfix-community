@@ -11,11 +11,13 @@ import {
   Users,
   UserPlus,
   Home,
+  Inbox,
   LogOut,
   Loader2,
   CheckCircle2,
   AlertCircle,
   Send,
+  CircleUserRound,
 } from 'lucide-react';
 
 export default function SupervisorOnboardPage() {
@@ -42,6 +44,10 @@ export default function SupervisorOnboardPage() {
     setSuccess(false);
 
     try {
+      // v2-visible path: provisioning a UserAccount with role 'cleaner' is
+      // what the supervisor roster/dispatch lists (v1 column lift in the
+      // workforce service), so the new cleaner appears immediately without
+      // any extra step.
       await provisionUser({
         name: name.trim(),
         workId: workId.trim() || idNumber.trim(),
@@ -79,8 +85,10 @@ export default function SupervisorOnboardPage() {
     { to: '/dashboard', label: 'Dashboard', icon: Home },
     { to: '/supervisor/tasks', label: 'Triage Board', icon: ClipboardList },
     { to: '/supervisor/dispatch', label: 'Dispatch', icon: Send },
+    { to: '/supervisor/reviews', label: 'Reviews', icon: Inbox },
     { to: '/supervisor/workforce', label: 'Workforce Roster', icon: Users },
     { to: '/supervisor/onboard', label: 'Onboard Staff', icon: UserPlus },
+    { to: '/supervisor/account', label: 'Account', icon: CircleUserRound },
   ];
 
   return (

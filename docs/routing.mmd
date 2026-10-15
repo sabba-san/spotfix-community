@@ -1,0 +1,319 @@
+%% SpotFix Community — Complete Routing Diagram
+%% Render with: Mermaid Live Editor, GitHub, VS Code (Markdown Preview), Notion
+%%
+%% Color Legend:
+%%   🔵 Public/Guest      🟠 Cleaner      🟢 Supervisor      🟣 Admin/Master
+
+---
+title: "SpotFix Community — Routing Architecture"
+---
+
+```mermaid
+flowchart TB
+    %% ============================================================
+    %% SUBGRAPH 1: FRONTEND ROUTES (React Router v7)
+    %% ============================================================
+    subgraph FRONTEND["🌐 FRONTEND ROUTES (React Router v7)"]
+        direction TB
+
+        %% --- Public / Guest Routes ---
+        subgraph GUEST["🔵 Public / Guest (no auth)"]
+            G1["/"] -->|GuestRoute| G2["/login"]
+            G1 -->|GuestRoute| G3["/login/master"]
+            G1 -->|GuestRoute| G4["/register"]
+            G5["/status"] -.->|PublicLayout| G6["StatusBoardPage"]
+        end
+
+        %% --- Authenticated Public ---
+        subgraph PUBLIC["🔵 Authenticated Public"]
+            direction TB
+            P1["/dashboard"] -->|ProtectedRoute + PublicLayout| P2["DashboardPage"]
+            P2 --> P3["/submit → SubmitReportPage"]
+            P2 --> P4["/my-reports → MyReportsPage"]
+            P2 --> P5["/account → AccountPage (editable)"]
+            P2 -.->|role-based workspace link| W1["/supervisor/dispatch"]
+            P2 -.->|role-based workspace link| W2["/cleaner/tasks"]
+            P2 -.->|role-based workspace link| W3["/admin/overview"]
+        end
+
+        %% --- Cleaner Routes ---
+        subgraph CLEANER["🟠 Cleaner (role: cleaner)"]
+            C1["/cleaner"] -->|RoleRoute| C2["/cleaner/tasks → TasksPage"]
+            C2 --> C3["/cleaner/account → AccountPage"]
+            C3 -.->|bottom nav| C1
+            C3 -.->|bottom nav| C2
+            C3 -.->|bottom nav| DASH["/dashboard"]
+        end
+
+        %% --- Supervisor Routes ---
+        subgraph SUPERVISOR["🟢 Supervisor (role: supervisor)"]
+            direction TB
+            S1["/supervisor"] -->|RoleRoute| S2["/supervisor/tasks → TaskBoardPage"]
+            S2 --> S3["/supervisor/dispatch → DispatchPage"]
+            S3 --> S4["/supervisor/reviews → ReviewsPage"]
+            S4 --> S5["/supervisor/workforce → WorkforcePage"]
+            S5 --> S6["/supervisor/onboard → OnboardPage"]
+            S6 --> S7["/supervisor/account → AccountPage"]
+            S7 -.->|top nav| S1
+            S7 -.->|top nav| S2
+            S7 -.->|top nav| S3
+            S7 -.->|top nav| S4
+            S7 -.->|top nav| S5
+            S7 -.->|top nav| S6
+            S7 -.->|top nav| DASH
+        end
+
+        %% --- Admin / Master Routes ---
+        subgraph ADMIN["🟣 Admin / Master (role: master)"]
+            direction TB
+            A1["/admin"] -->|RoleRoute| A2["/admin/overview → OverviewPage"]
+            A2 --> A3["/admin/users → UsersPage"]
+            A3 --> A4["/admin/onboard → OnboardPage"]
+            A4 --> A5["/admin/control → ControlPage"]
+            A5 --> A6["/admin/account → AccountPage"]
+            A6 -.->|top nav| A1
+            A6 -.->|top nav| A2
+            A6 -.->|top nav| A3
+            A6 -.->|top nav| A4
+            A6 -.->|top nav| A5
+            A6 -.->|top nav| DASH
+        end
+
+        %% --- Route Guards ---
+        subgraph GUARDS["🛡️ Route Guards"]
+            GR1["GuestRoute<br/>!isAuthenticated"]
+            GR2["ProtectedRoute<br/>isAuthenticated"]
+            GR3["RoleRoute<br/>roles.includes(user.role)"]
+        end
+
+    end
+
+    %% ============================================================
+    %% SUBGRAPH 2: BACKEND API ROUTES (Express v1 + v2)
+    %% ============================================================
+    subgraph BACKEND["⚙️ BACKEND API ROUTES (Express)"]
+        direction TB
+
+        %% --- V1 Auth ---
+        subgraph V1_AUTH["V1 Auth (/api/v1)"]
+            V1A1["POST /users/login<br/>idNumber/email + password"]
+            V1A2["POST /users/register<br/>name, email, idNumber, phone"]
+            V1A3["POST /users/google<br/>Google ID token"]
+            V1A4["POST /users/logout"]
+            V1A5["POST /users/refresh"]
+            V1A6["POST /master/login"]
+            V1A7["POST /master/logout"]
+            V1A8["GET /me ✨"]
+            V1A9["PATCH /me ✨<br/>UpdateMeSchema"]
+        end
+
+        %% --- V1 Users ---
+        subgraph V1_USERS["V1 Users"]
+            V1U1["GET /users<br/>supervisor,master"]
+            V1U2["POST /users/provision<br/>supervisor,master"]
+            V1U3["GET /users/:userId<br/>self,supervisor,master"]
+            V1U4["PATCH /users/me ✨<br/>self"]
+        end
+
+        %% --- V1 Reports ---
+        subgraph V1_REPORTS["V1 Reports"]
+            V1R1["GET /reports<br/>role-based filtering"]
+            V1R2["POST /reports<br/>create"]
+            V1R3["PUT /reports/:id<br/>update status/assign"]
+            V1R4["GET /reports/public/status<br/>unauthenticated"]
+            V1R5["GET /reports/user/:userId"]
+        end
+
+        %% --- V1 Cleaners/Supervisors ---
+        subgraph V1_CLEANERS["V1 Cleaners/Supervisors"]
+            V1C1["GET /cleaners<br/>supervisor,master"]
+            V1C2["POST /cleaners<br/>supervisor,master"]
+            V1C3["POST /cleaners/:id/assign<br/>supervisor,master"]
+            V1C4["PATCH /cleaners/:id/supervisor<br/>supervisor,master"]
+            V1C5["GET /supervisors/:id/cleaners<br/>self,master"]
+        end
+
+        %% --- V2 Auth ---
+        subgraph V2_AUTH["V2 Auth (/api/v2)"]
+            V2A1["POST /auth/exchange<br/>V1 token → V2 device token"]
+            V2A2["POST /auth/refresh"]
+            V2A3["POST /auth/logout-device"]
+            V2A4["GET /me<br/>roles + device"]
+            V2A5["POST /devices/register"]
+        end
+
+        %% --- V2 Supervisor ---
+        subgraph V2_SUPERVISOR["V2 Supervisor (role: supervisor)"]
+            V2S1["GET /supervisor/dashboard"]
+            V2S2["GET /supervisor/reports?status="]
+            V2S3["PATCH /supervisor/reports/:id/assign<br/>cleaner_user_id, note"]
+            V2S4["PATCH /supervisor/reports/:id/endorse"]
+            V2S5["PATCH /supervisor/reports/:id/reject"]
+            V2S6["GET /supervisor/cleaners?search="]
+            V2S7["GET /supervisor/volunteer-requests?status="]
+            V2S8["PATCH /supervisor/volunteer-requests/:id/reject"]
+        end
+
+        %% --- V2 Cleaner ---
+        subgraph V2_CLEANER["V2 Cleaner (role: cleaner)"]
+            V2C1["GET /cleaner/tasks"]
+            V2C2["GET /cleaner/available"]
+            V2C3["GET /cleaner/history"]
+            V2C4["PATCH /cleaner/tasks/:id/accept"]
+            V2C5["PATCH /cleaner/tasks/:id/reject"]
+            V2C6["PATCH /cleaner/tasks/:id/start"]
+            V2C7["PATCH /cleaner/tasks/:id/resolve<br/>attachments[]"]
+            V2C8["POST /cleaner/tasks/:id/volunteer-request"]
+        end
+
+        %% --- V2 Admin ---
+        subgraph V2_ADMIN["V2 Admin (role: admin)"]
+            V2D1["GET /admin/users?search="]
+            V2D2["POST /admin/users/:id/roles<br/>supervisor|cleaner"]
+        end
+
+        %% --- V2 Reports/Notifications ---
+        subgraph V2_OTHER["V2 Reports/Notifications"]
+            V2O1["GET /reports/:id<br/>detail + attachments + events"]
+            V2O2["POST /reports<br/>create"]
+            V2O3["POST /uploads/presign"]
+            V2O4["GET /notifications"]
+            V2O5["PATCH /notifications/:id/read"]
+        end
+
+    end
+
+    %% ============================================================
+    %% SUBGRAPH 3: AUTH FLOW SEQUENCE
+    %% ============================================================
+    subgraph AUTH["🔐 AUTH FLOW SEQUENCE"]
+        direction LR
+        U1["User"] -->|1. POST /users/login| A1["V1 Auth"]
+        A1 -->|2. JWT + Refresh Token| U1
+        A1 -->|3. is master?| M1{"role = master?"}
+        M1 -->|yes| M2["Done (V1 only)"]
+        M1 -->|no| V2E["4. ensureV2Session()"]
+        V2E -->|5. POST /auth/exchange<br/>Bearer V1 token| V2A["V2 Auth"]
+        V2A -->|6. V2 Device Token| U1
+        U1 -->|7. RoleRoute check| RR["RoleRoute<br/>roles.includes(user.role)"]
+        RR -->|supervisor| S1
+        RR -->|cleaner| C1
+        RR -->|master| A1
+        RR -->|public| P1
+    end
+
+    %% ============================================================
+    %% SUBGRAPH 4: NAV CONNECTIONS (per role shell)
+    %% ============================================================
+    subgraph NAV["🧭 NAV CONNECTIONS (Role Shells)"]
+        direction TB
+
+        %% PublicLayout (shared)
+        subgraph PL["PublicLayout (shared header + mobile tabs)"]
+            PL1["Dashboard"] --> PL2["Submit Issue"]
+            PL2 --> PL3["🔵 Role Workspace Link"]
+            PL3 --> PL4["My Reports"]
+            PL4 --> PL5["Account"]
+        end
+
+        %% Admin Shell
+        subgraph AS["Admin Shell (5 pages)"]
+            AS1["Dashboard"] --> AS2["Overview"]
+            AS2 --> AS3["Users"]
+            AS3 --> AS4["Onboarding"]
+            AS4 --> AS5["Control"]
+            AS5 --> AS6["Account"]
+        end
+
+        %% Cleaner Shell
+        subgraph CS["Cleaner Shell (bottom nav)"]
+            CS1["Dashboard"] --> CS2["Tasks"]
+            CS2 --> CS3["My Profile"]
+        end
+
+        %% Supervisor Shell
+        subgraph SS["Supervisor Shell (6 pages)"]
+            SS1["Dashboard"] --> SS2["Triage Board"]
+            SS2 --> SS3["Dispatch"]
+            SS3 --> SS4["Reviews"]
+            SS4 --> SS5["Workforce Roster"]
+            SS5 --> SS6["Onboard Staff"]
+            SS6 --> SS7["Account"]
+        end
+    end
+
+    %% ============================================================
+    %% CROSS-LINKS
+    %% ============================================================
+    %% Frontend → Backend
+    G2 -.->|POST /users/login| V1A1
+    G4 -.->|POST /users/register| V1A2
+    G3 -.->|POST /master/login| V1A6
+    P5 -.->|PATCH /users/me| V1A9
+    S3 -.->|PATCH /supervisor/reports/:id/assign| V2S3
+    C2 -.->|PATCH /cleaner/tasks/:id/accept| V2C4
+    A3 -.->|POST /admin/users/:id/roles| V2D2
+
+    %% Auth flow connections
+    V1A1 -.->|JWT| V2E
+    V2A -.->|device token| RR
+
+    %% Guards
+    GR1 -.-> G2
+    GR2 -.-> P1
+    GR3 -.-> S1
+    GR3 -.-> C1
+    GR3 -.-> A1
+
+    %% Styling
+    classDef guest fill:#e3f2fd,stroke:#1976d2,color:#0d47a1
+    classDef public fill:#e3f2fd,stroke:#1976d2,color:#0d47a1
+    classDef cleaner fill:#fff3e0,stroke:#f57c00,color:#e65100
+    classDef supervisor fill:#e0f2f1,stroke:#00695c,color:#004d40
+    classDef admin fill:#f3e5f5,stroke:#7b1fa2,color:#4a148c
+    classDef guard fill:#fafafa,stroke:#757575,color:#424242,stroke-dasharray: 5 5
+
+    class G1,G2,G3,G4,G5,G6 guest
+    class P1,P2,P3,P4,P5,W1,W2,W3,DASH public
+    class C1,C2,C3,CLEANER cleaner
+    class S1,S2,S3,S4,S5,S6,S7 supervisor
+    class A1,A2,A3,A4,A5,A6 admin
+    class GR1,GR2,GR3 guard
+
+```
+
+---
+
+### Legend
+
+| Color | Role | Pages |
+|-------|------|-------|
+| 🔵 Blue | **Public / Guest** | `/login`, `/register`, `/status`, `/dashboard`, `/submit`, `/my-reports`, `/account` |
+| 🟠 Orange | **Cleaner** | `/cleaner/tasks`, `/cleaner/account` |
+| 🟢 Green | **Supervisor** | `/supervisor/tasks`, `/supervisor/dispatch`, `/supervisor/reviews`, `/supervisor/workforce`, `/supervisor/onboard`, `/supervisor/account` |
+| 🟣 Purple | **Admin / Master** | `/admin/overview`, `/admin/users`, `/admin/onboard`, `/admin/control`, `/admin/account` |
+
+### Key Flows
+
+1. **Login** → V1 `/users/login` → JWT → (if staff) V2 `/auth/exchange` → device token → RoleRoute → role dashboard
+2. **Profile Edit** → `PATCH /users/me` (new endpoint, strict schema)
+3. **Supervisor Dispatch** → `PATCH /supervisor/reports/:id/assign` + volunteer approve/decline
+4. **Cleaner Tasks** → `PATCH /cleaner/tasks/:id/accept|reject|start|resolve`
+4. **Admin User Mgmt** → `POST /admin/users/:id/roles` (supervisor|cleaner)
+
+### How to View
+
+```bash
+# Option 1: VS Code
+# Open docs/routing.mmd → Cmd+Shift+V (Markdown Preview)
+
+# Option 2: GitHub
+# View directly in repo: https://github.com/your-fork/spotfix-community/blob/main/docs/routing.mmd
+
+# Option 3: Mermaid Live Editor
+# Copy content → https://mermaid.live/
+```
+
+---
+
+*Generated as part of 4-phase revamp (commit 0e96eb9)*

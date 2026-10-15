@@ -20,8 +20,11 @@ import type { V2VolunteerRequest } from '@/design-revamp/lib/api';
 import { PageLoader } from '@/design-revamp/components/feedback/PageLoader';
 import { ErrorState } from '@/design-revamp/components/feedback/ErrorState';
 import { EmptyState } from '@/design-revamp/components/feedback/EmptyState';
+import { RoleErrorBanner } from '@/design-revamp/components/feedback/RoleErrorBanner';
 import { Button } from '@/design-revamp/components/ui/button';
 import { Badge } from '@/design-revamp/components/ui/badge';
+import { Textarea } from '@/design-revamp/components/ui/textarea';
+import { toast } from 'sonner';
 import {
   ShieldAlert,
   ClipboardList,
@@ -60,6 +63,7 @@ export default function SupervisorDispatchPage() {
   const dashboard = useSupervisorDashboardV2();
   const submittedQuery = useSupervisorReportsV2('submitted');
   const rejectedQuery = useSupervisorReportsV2('rejected_by_cleaner');
+  const supervisorRejectedQuery = useSupervisorReportsV2('rejected_by_supervisor');
   const volunteersQuery = useVolunteerRequestsV2('pending');
   const cleanersQuery = useSupervisorCleanersV2(appliedCleanerSearch);
 
@@ -70,8 +74,9 @@ export default function SupervisorDispatchPage() {
     () => [
       ...(submittedQuery.data?.reports ?? []),
       ...(rejectedQuery.data?.reports ?? []),
+      ...(supervisorRejectedQuery.data?.reports ?? []),
     ],
-    [submittedQuery.data, rejectedQuery.data],
+    [submittedQuery.data, rejectedQuery.data, supervisorRejectedQuery.data],
   );
   const volunteers = useMemo(
     () => volunteersQuery.data ?? [],
@@ -83,7 +88,10 @@ export default function SupervisorDispatchPage() {
   );
 
   const summary = dashboard.data?.summary;
-  const pendingCount = (summary?.submitted ?? 0) + (summary?.rejected_by_cleaner ?? 0);
+  const pendingCount =
+    (summary?.submitted ?? 0) +
+    (summary?.rejected_by_cleaner ?? 0) +
+    (summary?.rejected_by_supervisor ?? 0);
   const inProgressCount =
     (summary?.assigned ?? 0) + (summary?.accepted_by_cleaner ?? 0) + (summary?.in_progress ?? 0);
 
@@ -94,13 +102,16 @@ export default function SupervisorDispatchPage() {
     selectedCleaner != null &&
     canAssignV2Status(selectedReport.status);
 
-  const queueLoading = submittedQuery.isLoading || rejectedQuery.isLoading;
-  const queueError = submittedQuery.isError || rejectedQuery.isError;
+  const queueLoading =
+    submittedQuery.isLoading || rejectedQuery.isLoading || supervisorRejectedQuery.isLoading;
+  const queueError =
+    submittedQuery.isError || rejectedQuery.isError || supervisorRejectedQuery.isError;
 
   function refetchAll() {
     dashboard.refetch();
     submittedQuery.refetch();
     rejectedQuery.refetch();
+    supervisorRejectedQuery.refetch();
     volunteersQuery.refetch();
     cleanersQuery.refetch();
   }
@@ -115,6 +126,7 @@ export default function SupervisorDispatchPage() {
           ...(note.trim() ? { note: note.trim() } : {}),
         },
       });
+      toast.success('Report assigned successfully');
       setSelectedReportId(null);
       setSelectedCleanerId(null);
       setAssignNote('');
@@ -244,6 +256,19 @@ export default function SupervisorDispatchPage() {
         {actionError && (
           <p role="alert" className="text-xs font-medium text-destructive">{actionError}</p>
         )}
+
+        <RoleErrorBanner
+          errors={[
+            dashboard.error,
+            submittedQuery.error,
+            rejectedQuery.error,
+            supervisorRejectedQuery.error,
+            volunteersQuery.error,
+            cleanersQuery.error,
+          ]}
+          expectedRole="supervisor"
+          onReconnect={refetchAll}
+        />
 
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
           {/* Column 1: unassigned reports */}
@@ -404,26 +429,17 @@ export default function SupervisorDispatchPage() {
             Manual Dispatch
           </h2>
           <p className="mt-1 text-xs text-muted-foreground">
-            {selectedReport ? (
-              <>Report: <span className="font-semibold text-foreground">{selectedReport.title}</span></>
-            ) : (
-              'Select an unassigned report from the left column.'
-            )}
-            {' · '}
-            {selectedCleaner ? (
-              <>Cleaner: <span className="font-semibold text-foreground">{selectedCleaner.name}</span></>
-            ) : (
-              'Select an available cleaner from the right column.'
-            )}
+            Select an unassigned report from the left column... Select an available cleaner from the right column.
           </p>
           <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-            <input
+            <Textarea
               value={assignNote}
               onChange={(e) => setAssignNote(e.target.value)}
-              placeholder="Note for cleaner (optional, max 500)"
+              placeholder="Note for cleaner (optional, max 500 chars)"
               maxLength={500}
               aria-label="Note for cleaner"
-              className="h-11 flex-1 rounded-lg border border-input bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+              rows={2}
+              className="min-h-11 flex-1 resize-none rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
             />
             <Button
               className="min-h-11 sm:w-auto"

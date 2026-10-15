@@ -70,7 +70,7 @@ export default function LoginPage() {
               if (user.role === 'master') navigate('/admin');
               else if (user.role === 'supervisor') navigate('/supervisor');
               else if (user.role === 'cleaner') navigate('/cleaner');
-              else navigate('/');
+              else navigate('/dashboard');
             } catch (err) {
               setError(err instanceof Error ? err.message : 'Google sign-in failed');
             } finally {
@@ -134,7 +134,7 @@ export default function LoginPage() {
       if (user.role === 'master') navigate('/admin');
       else if (user.role === 'supervisor') navigate('/supervisor');
       else if (user.role === 'cleaner') navigate('/cleaner');
-      else navigate('/');
+      else navigate('/dashboard');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
     } finally {
@@ -157,7 +157,7 @@ export default function LoginPage() {
         phone: regPhone.trim(),
         password: regPassword,
       });
-      navigate('/');
+      navigate('/dashboard');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Registration failed');
     } finally {

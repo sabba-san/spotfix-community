@@ -23,7 +23,7 @@ const PRIORITIES = [
 
 export default function SubmitReportPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  useAuth();
   const submitReport = useSubmitReport();
 
   const [category, setCategory] = useState<string>('Litter');
@@ -46,10 +46,7 @@ export default function SubmitReportPage() {
         location: location.trim(),
         details: details.trim(),
         coordinates,
-        reporterPhone: user?.phone || '',
-        evidencePhoto: photos[0] || '',
         photos,
-        photoTimestamp: photos.length > 0 ? new Date().toISOString() : undefined,
       });
       navigate('/my-reports');
     } catch (err: any) {

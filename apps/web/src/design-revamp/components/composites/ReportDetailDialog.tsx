@@ -25,6 +25,13 @@ interface ReportDetailDialogProps {
   reportId: string;
   reportTitle?: string;
   onClose: () => void;
+  /**
+   * When false, the dialog is review-only: the cleaner-roster and
+   * volunteer-request queries are not fired and the assign/volunteer
+   * sections are hidden. Used by the Reviews queue, where assignment is
+   * never valid (reports are already resolved_by_cleaner).
+   */
+  assignTools?: boolean;
 }
 
 function MetaRow({ label, value }: { label: string; value: string }) {
@@ -41,10 +48,10 @@ function MetaRow({ label, value }: { label: string; value: string }) {
  * (Image 1): status/priority/category/location/GPS/reporter/submitted,
  * details, "Assign to cleaner" dropdown, photos, review actions, Close.
  */
-export function ReportDetailDialog({ reportId, reportTitle, onClose }: ReportDetailDialogProps) {
+export function ReportDetailDialog({ reportId, reportTitle, onClose, assignTools = true }: ReportDetailDialogProps) {
   const { data: detail, isLoading, isError, refetch } = useReportDetailV2(reportId);
-  const { data: cleaners } = useSupervisorCleanersV2();
-  const { data: volunteerRequests } = useVolunteerRequestsV2('pending');
+  const { data: cleaners } = useSupervisorCleanersV2(undefined, assignTools);
+  const { data: volunteerRequests } = useVolunteerRequestsV2('pending', assignTools);
 
   const assignMutation = useAssignReportV2();
   const endorseMutation = useEndorseReportV2();
@@ -148,7 +155,7 @@ export function ReportDetailDialog({ reportId, reportTitle, onClose }: ReportDet
               </Badge>
             </div>
 
-            {pendingVolunteers.length > 0 && (
+            {assignTools && pendingVolunteers.length > 0 && (
               <section className="space-y-2 rounded-xl border border-amber-200 bg-amber-50/60 p-3 dark:border-amber-900 dark:bg-amber-950/30">
                 <h3 className="flex items-center gap-1.5 text-sm font-semibold text-amber-800 dark:text-amber-200">
                   <HandHelping className="h-4 w-4" />
@@ -175,7 +182,7 @@ export function ReportDetailDialog({ reportId, reportTitle, onClose }: ReportDet
               </section>
             )}
 
-            {canAssignV2Status(report.status) && (
+            {assignTools && canAssignV2Status(report.status) && (
               <section className="space-y-2">
                 <h3 className="text-sm font-semibold text-muted-foreground">Assign to cleaner</h3>
                 {(cleaners ?? []).length === 0 ? (

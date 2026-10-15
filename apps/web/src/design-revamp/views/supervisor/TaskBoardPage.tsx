@@ -14,6 +14,7 @@ import {
 import { PageLoader } from '@/design-revamp/components/feedback/PageLoader';
 import { ErrorState } from '@/design-revamp/components/feedback/ErrorState';
 import { EmptyState } from '@/design-revamp/components/feedback/EmptyState';
+import { RoleErrorBanner } from '@/design-revamp/components/feedback/RoleErrorBanner';
 import { Button } from '@/design-revamp/components/ui/button';
 import { Badge } from '@/design-revamp/components/ui/badge';
 import {
@@ -186,6 +187,16 @@ export default function SupervisorTaskBoardPage() {
 
         {reportsQuery.isLoading && <PageLoader />}
         {reportsQuery.isError && <ErrorState onRetry={() => reportsQuery.refetch()} />}
+        {!reportsQuery.isLoading && (
+          <RoleErrorBanner
+            errors={[dashboard.error, reportsQuery.error]}
+            expectedRole="supervisor"
+            onReconnect={() => {
+              dashboard.refetch();
+              reportsQuery.refetch();
+            }}
+          />
+        )}
         {!reportsQuery.isLoading && !reportsQuery.isError && reports.length === 0 && (
           <EmptyState
             icon={<CheckCircle2 className="h-8 w-8 text-muted-foreground" />}

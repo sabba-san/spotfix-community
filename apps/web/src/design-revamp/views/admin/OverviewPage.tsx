@@ -1,7 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/design-revamp/hooks/useAuth';
-import { useSupervisorDashboardV2 } from '@/design-revamp/hooks/useV2';
-import { formatV2Status, v2StatusTone } from '@/design-revamp/components/composites/V2Status';
+import { useReports, useUsers, useCleaners } from '@/design-revamp/hooks/useReports';
 import { PageLoader } from '@/design-revamp/components/feedback/PageLoader';
 import { ErrorState } from '@/design-revamp/components/feedback/ErrorState';
 import { Button } from '@/design-revamp/components/ui/button';
@@ -22,22 +21,53 @@ import {
   Home,
 } from 'lucide-react';
 
+function v1StatusTone(status: string): string {
+  if (status === 'Resolved') return 'border-emerald-300 bg-emerald-50 text-emerald-700';
+  if (status === 'In Progress' || status === 'Awaiting Endorsement') return 'border-blue-300 bg-blue-50 text-blue-700';
+  if (status === 'Assigned') return 'border-indigo-300 bg-indigo-50 text-indigo-700';
+  if (status === 'Rejected') return 'border-rose-300 bg-rose-50 text-rose-700';
+  return 'border-amber-300 bg-amber-50 text-amber-700';
+}
+
+// v1 report statuses: Reported, Pending (legacy), Submitted (legacy),
+// Assigned, In Progress, Awaiting Endorsement, Resolved, Rejected.
+const ACTIVE_STATUSES = new Set(['Reported', 'Pending', 'Submitted', 'Assigned']);
+
 export default function AdminOverviewPage() {
   const { user, logout } = useAuth();
   const location = useLocation();
-  const { data, isLoading, isError, refetch } = useSupervisorDashboardV2();
+  // Master sessions stay on the v1 API by design (no v2 device session),
+  // so the control room reads live data from the v1 endpoints.
+  const reportsQuery = useReports();
+  const usersQuery = useUsers();
+  const cleanersQuery = useCleaners();
 
-  const summary = data?.summary ?? {};
-  const recent = data?.recent_reports ?? [];
+  const reports = Array.isArray(reportsQuery.data) ? reportsQuery.data : [];
+  const users = Array.isArray(usersQuery.data) ? usersQuery.data : [];
+  const cleaners = Array.isArray(cleanersQuery.data) ? cleanersQuery.data : [];
 
-  const activeCount =
-    (summary.submitted ?? 0) +
-    (summary.assigned ?? 0) +
-    (summary.accepted_by_cleaner ?? 0) +
-    (summary.in_progress ?? 0);
-  const awaitingReview = summary.resolved_by_cleaner ?? 0;
-  const resolvedCount = (summary.endorsed_by_supervisor ?? 0) + (summary.closed ?? 0);
-  const rejectedCount = (summary.rejected_by_cleaner ?? 0) + (summary.rejected_by_supervisor ?? 0);
+  const isLoading = reportsQuery.isLoading || usersQuery.isLoading || cleanersQuery.isLoading;
+  const isError = reportsQuery.isError || usersQuery.isError || cleanersQuery.isError;
+
+  function refetchAll() {
+    reportsQuery.refetch();
+    usersQuery.refetch();
+    cleanersQuery.refetch();
+  }
+
+  const activeCount = reports.filter((r: any) => ACTIVE_STATUSES.has(r.status)).length;
+  const awaitingReview = reports.filter((r: any) => r.status === 'Awaiting Endorsement').length;
+  const resolvedCount = reports.filter((r: any) => r.status === 'Resolved').length;
+  const rejectedCount = reports.filter((r: any) => r.status === 'Rejected').length;
+  const staffCount = users.filter((u: any) => u.role === 'supervisor' || u.role === 'cleaner').length;
+
+  const recent = [...reports]
+    .sort((a: any, b: any) => {
+      const ta = new Date(a.timestamp || a.createdAt || a.updatedAt || 0).getTime();
+      const tb = new Date(b.timestamp || b.createdAt || b.updatedAt || 0).getTime();
+      return tb - ta;
+    })
+    .slice(0, 6);
 
   const navLinks = [
     { to: '/dashboard', label: 'Dashboard', icon: Home },
@@ -99,9 +129,9 @@ export default function AdminOverviewPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-xl font-bold tracking-tight text-foreground">Community Health & Infrastructure Overview</h1>
-            <p className="mt-1 text-xs text-muted-foreground">Operational metrics across all roles, pulled live from the v2 pipeline.</p>
+            <p className="mt-1 text-xs text-muted-foreground">Operational metrics across all roles, pulled live from the v1 API.</p>
           </div>
-          <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isLoading} className="gap-1.5 text-xs">
+          <Button variant="outline" size="sm" onClick={() => refetchAll()} disabled={isLoading} className="gap-1.5 text-xs">
             <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? 'animate-spin' : ''}`} />
             Refresh Analytics
           </Button>
@@ -145,25 +175,43 @@ export default function AdminOverviewPage() {
         <div className="rounded-2xl border border-border/80 bg-card p-5 space-y-4">
           <h2 className="text-base font-semibold text-foreground">Recent Incidents Log</h2>
           {isLoading && <PageLoader />}
-          {isError && <ErrorState onRetry={() => refetch()} />}
+          {isError && <ErrorState onRetry={() => refetchAll()} />}
           {!isLoading && !isError && recent.length === 0 && (
             <p className="text-xs text-muted-foreground">No reports recorded yet.</p>
           )}
           {!isLoading && !isError && recent.length > 0 && (
             <div className="space-y-2.5">
-              {recent.slice(0, 6).map((r) => (
-                <div key={r.id} className="flex items-center justify-between p-3 rounded-lg border bg-muted/20 text-xs">
+              {recent.map((r: any) => (
+                <div key={r._id || r.id} className="flex items-center justify-between p-3 rounded-lg border bg-muted/20 text-xs">
                   <div>
-                    <span className="font-semibold text-foreground">{r.title}</span>
-                    <span className="text-muted-foreground ml-2">({r.location_address || 'Campus'})</span>
+                    <span className="font-semibold text-foreground">{r.category || 'General Report'} · {r.id || r._id}</span>
+                    <span className="text-muted-foreground ml-2">({r.location || 'Campus'})</span>
                   </div>
-                  <Badge variant="outline" className={`text-[10px] ${v2StatusTone(r.status)}`}>
-                    {formatV2Status(r.status)}
+                  <Badge variant="outline" className={`text-[10px] ${v1StatusTone(r.status)}`}>
+                    {r.status}
                   </Badge>
                 </div>
               ))}
             </div>
           )}
+        </div>
+
+        <div className="rounded-2xl border border-border/80 bg-card p-5 space-y-4">
+          <h2 className="text-base font-semibold text-foreground">Workforce Snapshot</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-xs">
+            <div className="rounded-lg border bg-muted/20 p-3">
+              <span className="text-muted-foreground font-medium">Registered Users</span>
+              <p className="text-xl font-bold text-foreground mt-0.5">{users.length}</p>
+            </div>
+            <div className="rounded-lg border bg-muted/20 p-3">
+              <span className="text-muted-foreground font-medium">Staff (Sup + Cln)</span>
+              <p className="text-xl font-bold text-foreground mt-0.5">{staffCount}</p>
+            </div>
+            <div className="rounded-lg border bg-muted/20 p-3">
+              <span className="text-muted-foreground font-medium">Cleaner Profiles</span>
+              <p className="text-xl font-bold text-foreground mt-0.5">{cleaners.length}</p>
+            </div>
+          </div>
         </div>
       </main>
     </div>

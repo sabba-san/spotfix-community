@@ -9,7 +9,17 @@ import { ErrorState } from '@/design-revamp/components/feedback/ErrorState';
 import { EmptyState } from '@/design-revamp/components/feedback/EmptyState';
 import { Link } from 'react-router-dom';
 
-const FILTER_TABS = ['All', 'Reported', 'Assigned', 'In Progress', 'Resolved'] as const;
+const FILTER_TABS = [
+  'All',
+  'Reported',
+  'Pending',
+  'Submitted',
+  'Assigned',
+  'In Progress',
+  'Awaiting Endorsement',
+  'Resolved',
+  'Rejected',
+] as const;
 
 export default function MyReportsPage() {
   const { user } = useAuth();

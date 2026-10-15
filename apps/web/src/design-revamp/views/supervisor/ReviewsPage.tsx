@@ -10,6 +10,7 @@ import {
 import { PageLoader } from '@/design-revamp/components/feedback/PageLoader';
 import { ErrorState } from '@/design-revamp/components/feedback/ErrorState';
 import { EmptyState } from '@/design-revamp/components/feedback/EmptyState';
+import { RoleErrorBanner } from '@/design-revamp/components/feedback/RoleErrorBanner';
 import { Button } from '@/design-revamp/components/ui/button';
 import { Badge } from '@/design-revamp/components/ui/badge';
 import {
@@ -114,6 +115,13 @@ export default function SupervisorReviewsPage() {
 
         {reviewsQuery.isLoading && <PageLoader />}
         {reviewsQuery.isError && <ErrorState onRetry={() => reviewsQuery.refetch()} />}
+        {!reviewsQuery.isLoading && !reviewsQuery.isError && (
+          <RoleErrorBanner
+            errors={[reviewsQuery.error]}
+            expectedRole="supervisor"
+            onReconnect={() => reviewsQuery.refetch()}
+          />
+        )}
         {!reviewsQuery.isLoading && !reviewsQuery.isError && reports.length === 0 && (
           <EmptyState
             icon={<CheckCircle2 className="h-8 w-8 text-emerald-600" />}
@@ -145,7 +153,7 @@ export default function SupervisorReviewsPage() {
       </main>
 
       {selectedReportId && (
-        <ReportDetailDialog reportId={selectedReportId} onClose={() => setSelectedReportId(null)} />
+        <ReportDetailDialog reportId={selectedReportId} assignTools={false} onClose={() => setSelectedReportId(null)} />
       )}
     </div>
   );

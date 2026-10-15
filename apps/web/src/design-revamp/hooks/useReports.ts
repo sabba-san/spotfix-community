@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   getPublicStatusBoard,
   getMyReports,
-  createReport,
+  submitReportV2,
   updateReport,
   listReports,
   listCleaners,
@@ -38,11 +38,14 @@ export function useReports() {
 export function useSubmitReport() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: createReport,
+    mutationFn: submitReportV2,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['myReports'] });
       queryClient.invalidateQueries({ queryKey: ['reports'] });
       queryClient.invalidateQueries({ queryKey: ['publicStatusBoard'] });
+      queryClient.invalidateQueries({ queryKey: ['v2', 'supervisor'] });
+      queryClient.invalidateQueries({ queryKey: ['v2', 'cleaner'] });
+      queryClient.invalidateQueries({ queryKey: ['v2', 'report'] });
     },
   });
 }

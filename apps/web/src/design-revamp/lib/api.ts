@@ -196,7 +196,54 @@ export async function listReports() {
 }
 
 export async function getPublicStatusBoard() {
-  return apiRequest('/reports/public/status', { tenant: true });
+  const [legacyBoard, v2Reports] = await Promise.all([
+    apiRequest('/reports/public/status', { tenant: true }),
+    getPublicV2Reports(),
+  ]);
+  if (v2Reports.length === 0) return legacyBoard;
+
+  const legacyReports = Array.isArray(legacyBoard?.reports) ? legacyBoard.reports : [];
+  const reports = [...v2Reports, ...legacyReports];
+  const pending = reports.filter((report) => ['Reported', 'Assigned', 'submitted', 'assigned'].includes(report.status)).length;
+  const open = reports.filter((report) => ['Assigned', 'In Progress', 'Awaiting Endorsement', 'Rejected', 'assigned', 'accepted_by_cleaner', 'in_progress', 'resolved_by_cleaner', 'rejected_by_cleaner', 'rejected_by_supervisor'].includes(report.status)).length;
+  const resolved = reports.filter((report) => ['Resolved', 'endorsed_by_supervisor', 'closed'].includes(report.status)).length;
+  const urgent = reports.filter((report) => !['Resolved', 'endorsed_by_supervisor', 'closed'].includes(report.status) && ['High', 'Critical', 'high'].includes(report.priority)).length;
+
+  return {
+    ...legacyBoard,
+    reports,
+    summary: {
+      ...legacyBoard?.summary,
+      total: reports.length,
+      pending,
+      open,
+      resolved,
+      urgent,
+    },
+  };
+}
+
+async function getPublicV2Reports(): Promise<Array<Record<string, unknown>>> {
+  const response = await fetch(
+    `${API_V2_BASE_URL}/monitor/orgs/${encodeURIComponent(TENANT_SLUG)}/reports?limit=200`,
+    { headers: { Accept: 'application/json' } },
+  );
+  const payload = await parseJson(response);
+  if (!response.ok) {
+    throw new Error(extractErrorMessage(payload, `Public report feed failed (${response.status})`));
+  }
+  const reports = Array.isArray(payload?.data?.reports) ? payload.data.reports : [];
+  return reports.map((report: any) => ({
+    id: report.id,
+    _id: report.id,
+    status: report.status,
+    priority: typeof report.priority === 'string' ? report.priority[0].toUpperCase() + report.priority.slice(1) : report.priority,
+    category: report.title,
+    location: report.location_address,
+    details: report.title,
+    timestamp: report.created_at,
+    photos: [],
+  }));
 }
 
 export async function getGeoConfig() {
@@ -455,6 +502,23 @@ export function clearV2Session() {
   localStorage.removeItem(V2_REFRESH_KEY);
 }
 
+/** True when a v2 failure means "this session lacks the required role". */
+export function isForbiddenRoleError(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err ?? '');
+  return /forbidden|permission|requires (supervisor|cleaner|admin|reporter)/i.test(msg);
+}
+
+/**
+ * Drop the cached v2 session and re-exchange from the current v1 token.
+ * Call once after a role switch or a 403 — if the 403 persists, the signed-in
+ * account genuinely lacks the role (wrong login portal), not a stale token.
+ */
+export async function reconnectV2Session(): Promise<void> {
+  clearV2Session();
+  v2SessionPromise = null;
+  await ensureV2Session();
+}
+
 function storeV2Session(session: { access_token: string; refresh_token?: string }) {
   if (!session?.access_token) return;
   localStorage.setItem(V2_ACCESS_KEY, session.access_token);
@@ -688,7 +752,20 @@ export async function getReportDetailV2(reportId: string): Promise<V2ReportDetai
   return apiV2Request(`/reports/${encodeURIComponent(reportId)}`) as Promise<V2ReportDetailResponse>;
 }
 
-export async function createReportV2(payload: { title: string; description?: string; location_lat?: number; location_lng?: number; location_address?: string; priority?: string }) {
+export async function createReportV2(payload: {
+  title: string;
+  description?: string;
+  location_lat?: number;
+  location_lng?: number;
+  location_address?: string;
+  priority?: 'low' | 'medium' | 'high';
+  attachments?: Array<{
+    file_url: string;
+    attachment_type: 'report_evidence' | 'cleaner_resolution_evidence' | 'supervisor_review_evidence';
+    file_mime_type?: string;
+    file_size?: number;
+  }>;
+}) {
   return apiV2Request('/reports', { method: 'POST', body: payload }) as Promise<V2MutationResponse>;
 }
 
@@ -700,10 +777,62 @@ export async function presignUploadV2(payload: { report_id: string; kind: 'evide
 
 /** Direct browser upload of a photo for a report; resolves to the file URL for mutation bodies. */
 export async function uploadReportPhotoV2(reportId: string, kind: 'evidence' | 'resolution' | 'extra', file: Blob): Promise<string> {
-  const presigned = await presignUploadV2({ report_id: reportId, kind, content_type: file.type || 'image/jpeg', content_length: file.size });
-  const put = await fetch(presigned.upload_url, { method: 'PUT', headers: { 'Content-Type': file.type || 'image/jpeg' }, body: file });
+  if (file.size > 10 * 1024 * 1024) {
+    throw new Error('Photo exceeds the maximum upload size of 10MB.');
+  }
+  const contentType = file.type || 'image/jpeg';
+  const presigned = await presignUploadV2({ report_id: reportId, kind, content_type: contentType });
+  const put = await fetch(presigned.upload_url, {
+    method: 'PUT',
+    headers: { 'Content-Type': contentType },
+    body: file,
+  });
   if (!put.ok) throw new Error(`Photo upload failed (${put.status})`);
   return presigned.file_url;
+}
+
+function dataUrlToBlob(dataUrl: string): Blob {
+  const match = /^data:([^;,]+);base64,(.+)$/i.exec(dataUrl);
+  if (!match) throw new Error('Invalid evidence photo data.');
+  const [, contentType, encoded] = match;
+  const binary = atob(encoded);
+  const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
+  return new Blob([bytes], { type: contentType });
+}
+
+export async function submitReportV2(payload: {
+  category: string;
+  priority: 'Low' | 'Medium' | 'High' | 'Critical';
+  location: string;
+  details: string;
+  coordinates?: { lat: number; lng: number };
+  photos?: string[];
+}) {
+  const photos = Array.isArray(payload.photos) ? payload.photos.filter(Boolean) : [];
+  const draftId = crypto.randomUUID();
+  const attachments = [];
+
+  for (let index = 0; index < photos.length; index += 1) {
+    const file = dataUrlToBlob(photos[index]);
+    const fileUrl = await uploadReportPhotoV2(draftId, index === 0 ? 'evidence' : 'extra', file);
+    attachments.push({
+      file_url: fileUrl,
+      attachment_type: 'report_evidence' as const,
+      file_mime_type: file.type,
+      file_size: file.size,
+    });
+  }
+
+  const normalizedPriority = payload.priority.toLowerCase();
+  return createReportV2({
+    title: `${payload.category} report`,
+    description: payload.details,
+    location_lat: payload.coordinates?.lat,
+    location_lng: payload.coordinates?.lng,
+    location_address: payload.location,
+    priority: normalizedPriority === 'critical' ? 'high' : normalizedPriority as 'low' | 'medium' | 'high',
+    attachments,
+  });
 }
 
 // ---- Admin (v2 roles, when signed in as an admin-capable user) ----

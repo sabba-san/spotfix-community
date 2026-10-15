@@ -9,8 +9,10 @@
 import { Readable } from 'node:stream';
 
 import {
+    CreateBucketCommand,
     DeleteObjectCommand,
     GetObjectCommand,
+    HeadBucketCommand,
     PutObjectCommand,
     S3Client
 } from '@aws-sdk/client-s3';
@@ -47,6 +49,36 @@ const s3Presign = new S3Client({
 });
 
 export const STORAGE_BUCKET = env.STORAGE_BUCKET;
+
+/**
+ * Ensure the configured bucket exists before report/photo requests arrive.
+ * LocalStack and MinIO volumes can be recreated independently from the API,
+ * so relying only on the compose init container leaves the API vulnerable to
+ * a transient but user-visible 500 during report submission.
+ */
+export async function ensureStorageBucket(): Promise<void> {
+    try {
+        await s3.send(new HeadBucketCommand({ Bucket: STORAGE_BUCKET }));
+        return;
+    } catch (error) {
+        const statusCode = (error as { $metadata?: { httpStatusCode?: number } }).$metadata?.httpStatusCode;
+        const name = (error as { name?: string }).name;
+        const bucketMissing = statusCode === 404 || name === 'NotFound' || name === 'NoSuchBucket';
+        if (!bucketMissing) {
+            throw error;
+        }
+    }
+
+    try {
+        await s3.send(new CreateBucketCommand({ Bucket: STORAGE_BUCKET }));
+        logger.info({ bucket: STORAGE_BUCKET }, 'storage bucket created');
+    } catch (error) {
+        const name = (error as { name?: string }).name;
+        if (name !== 'BucketAlreadyOwnedByYou' && name !== 'BucketAlreadyExists') {
+            throw error;
+        }
+    }
+}
 
 /** Build a tenant-scoped object key. Throws if no tenant context active. */
 export function buildPhotoKey(opts: {

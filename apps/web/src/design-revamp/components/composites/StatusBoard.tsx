@@ -11,8 +11,13 @@ import { EmptyState } from '@/design-revamp/components/feedback/EmptyState';
 import { Skeleton } from '@/design-revamp/components/feedback/Skeletons';
 import { cn } from '@/design-revamp/lib/utils';
 
-const PUBLIC_PENDING_STATUSES = new Set(['Reported']);
-const PUBLIC_OPEN_STATUSES = new Set(['Assigned', 'In Progress']);
+// Mirror the backend public-status buckets (reports.service.ts):
+// PENDING = Reported + legacy aliases (Pending, Submitted) + Assigned;
+// OPEN = Assigned, In Progress, Awaiting Endorsement, Rejected.
+// The public board normalizes legacy aliases to Reported, but My Reports
+// (v1 serializeMany) keeps raw values — so match every alias here.
+const PUBLIC_PENDING_STATUSES = new Set(['Reported', 'Pending', 'Submitted', 'Assigned']);
+const PUBLIC_OPEN_STATUSES = new Set(['Assigned', 'In Progress', 'Awaiting Endorsement', 'Rejected']);
 const PUBLIC_URGENT_PRIORITIES = new Set(['High', 'Critical']);
 
 export type MetricId = 'pending' | 'urgent' | 'cleaners' | 'open' | 'resolved' | 'total';

@@ -55,7 +55,11 @@ export function useSupervisorCleanersV2(search?: string, enabled = true) {
 
 function invalidateSupervisor(queryClient: ReturnType<typeof useQueryClient>) {
   queryClient.invalidateQueries({ queryKey: ['v2', 'supervisor'] });
+  queryClient.invalidateQueries({ queryKey: ['v2', 'cleaner'] });
   queryClient.invalidateQueries({ queryKey: ['v2', 'report'] });
+  queryClient.invalidateQueries({ queryKey: ['reports'] });
+  queryClient.invalidateQueries({ queryKey: ['myReports'] });
+  queryClient.invalidateQueries({ queryKey: ['publicStatusBoard'] });
 }
 
 export function useAssignReportV2() {

@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/design-revamp/hooks/useAuth';
 import {
   useNotificationsV2,
   useMarkNotificationReadV2,
   useUpdateProfile,
 } from '@/design-revamp/hooks/useV2';
-import { getV2Me } from '@/design-revamp/lib/api';
+import { getV2Me, listNotifications } from '@/design-revamp/lib/api';
 import { Button } from '@/design-revamp/components/ui/button';
 import { Badge } from '@/design-revamp/components/ui/badge';
 import { Label } from '@/design-revamp/components/ui/label';
@@ -34,7 +35,30 @@ function InfoRow({ label, value }: { label: string; value: string }) {
  */
 export function AccountCard() {
   const { user, logout, refreshUser } = useAuth();
-  const notifications = useNotificationsV2(20);
+  const isMaster = user?.authType === 'master';
+  // Master sessions stay on the v1 API by design (no v2 device session),
+  // so the control-room account reads notification history from the v1
+  // endpoint that explicitly allows the master role.
+  const notificationsV2 = useNotificationsV2(20, !isMaster);
+  const masterNotifications = useQuery({
+    queryKey: ['v1', 'notifications', 20],
+    queryFn: () => listNotifications(20),
+    enabled: isMaster,
+    staleTime: 15_000,
+    retry: false,
+  });
+  const notifications = isMaster
+    ? {
+        data: (Array.isArray(masterNotifications.data) ? masterNotifications.data : []).map((n: any) => ({
+          id: n._id || n.id || `${n.type}-${n.createdAt}`,
+          title: n.title,
+          body: n.body,
+          is_read: true,
+          created_at: n.createdAt || new Date().toISOString(),
+        })),
+        isLoading: masterNotifications.isLoading,
+      }
+    : notificationsV2;
   const markRead = useMarkNotificationReadV2();
   const updateProfile = useUpdateProfile();
   const [roles, setRoles] = useState<string[] | null>(null);
@@ -47,7 +71,8 @@ export function AccountCard() {
   const [formError, setFormError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
 
-  const isMaster = user?.authType === 'master';
+  // Edit-profile (PATCH /users/me) rejects master tokens backend-side,
+  // so the form stays hidden for master (view-only control-room account).
 
   useEffect(() => {
     let cancelled = false;

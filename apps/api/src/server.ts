@@ -1,6 +1,7 @@
 import { env } from './config/env';
 import { logger } from './config/logger';
 import { connectDatabase, disconnectDatabase } from './infra/db';
+import { ensureStorageBucket } from './infra/storage';
 import { createApp } from './app';
 
 async function bootstrap(): Promise<void> {
@@ -8,6 +9,13 @@ async function bootstrap(): Promise<void> {
         await connectDatabase();
     } catch (err) {
         logger.fatal({ err }, 'Failed to connect to Postgres');
+        process.exit(1);
+    }
+
+    try {
+        await ensureStorageBucket();
+    } catch (err) {
+        logger.fatal({ err }, 'Failed to initialize object storage');
         process.exit(1);
     }
 

@@ -9,6 +9,7 @@ import {
     supervisorReject,
     type ReportV2Status
 } from '../../reports/reports.service';
+import { reconcileLegacyReports } from '../../reports/sync.service';
 import { requireV2Auth, requireV2Role } from '../auth.middleware';
 import { ok } from '../envelope';
 import {
@@ -37,6 +38,7 @@ export function buildSupervisorV2Router(): Router {
     router.get(
         '/dashboard',
         asyncHandler(async (_req, res) => {
+            await reconcileLegacyReports();
             const { summary, recent } = await supervisorDashboard();
             ok(res, {
                 summary,
@@ -50,6 +52,7 @@ export function buildSupervisorV2Router(): Router {
         '/reports',
         validateV2(SupervisorListQuerySchema, 'query'),
         asyncHandler(async (req, res) => {
+            await reconcileLegacyReports();
             const q = req.query as { status?: ReportV2Status; page?: number; limit?: number };
             const { reports, total, page, limit } = await supervisorList(q);
             ok(

@@ -10,6 +10,8 @@ import {
   LayoutDashboard,
   Users2,
   UserPlus,
+  KeyRound,
+  CircleUserRound,
   LogOut,
   Loader2,
   CheckCircle2,

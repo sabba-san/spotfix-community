@@ -207,7 +207,11 @@ export default function CleanerTasksPage() {
       setResolveFiles((p) => { const n = { ...p }; delete n[taskId]; return n; });
       setResolveNote((p) => { const n = { ...p }; delete n[taskId]; return n; });
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Resolve failed');
+      if (e instanceof TypeError && e.message === 'Failed to fetch') {
+        setError("Couldn't reach photo storage — check your connection and retry");
+      } else {
+        setError(e instanceof Error ? e.message : 'Resolve failed');
+      }
     } finally {
       setBusyId(null);
     }
@@ -468,6 +472,14 @@ function TaskActions({
     );
   }
   if (task.status === 'in_progress') {
+    const [objectUrls, setObjectUrls] = useState<string[]>([]);
+
+    useEffect(() => {
+      const urls = files.map((f) => URL.createObjectURL(f));
+      setObjectUrls(urls);
+      return () => urls.forEach((u) => URL.revokeObjectURL(u));
+    }, [files]);
+
     return (
       <div className="space-y-2">
         <textarea
@@ -478,6 +490,26 @@ function TaskActions({
           maxLength={500}
           className="w-full rounded-lg border border-input bg-background px-3 py-2 text-xs"
         />
+        {files.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {objectUrls.map((url, i) => (
+              <div key={i} className="relative group">
+                <img src={url} alt={`Completion proof ${i + 1}`} className="h-20 w-20 rounded-lg border object-cover" />
+                <button
+                  type="button"
+                  className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-destructive text-destructive-foreground opacity-0 transition-opacity group-hover:opacity-100"
+                  onClick={() => {
+                    const next = files.filter((_, idx) => idx !== i);
+                    onFiles(next);
+                  }}
+                  disabled={busy}
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
         <label className="flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-primary/50 bg-primary/5 px-3 py-2 text-xs font-medium text-primary hover:bg-primary/10">
           <Camera className="h-4 w-4" />
           <span>{files.length > 0 ? `${files.length}/6 photo(s) selected — change` : 'Upload Completion Proof (up to 6)'}</span>

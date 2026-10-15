@@ -80,6 +80,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (identifier: string, password: string, expectedRole?: LoginRole) => {
     const nextUser = await apiLogin({ identifier, password });
     requireLoginRole(nextUser, expectedRole);
+    // Drop any cached v2 session from a previous role login before upgrading,
+    // otherwise the new account silently reuses the old role's token.
+    clearV2Session();
     setUser(nextUser);
     upgradeV2Session();
     return nextUser;
@@ -87,6 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = useCallback(async (data: { name: string; email: string; idNumber: string; phone: string; password: string }) => {
     const nextUser = await apiRegister(data);
+    clearV2Session();
     setUser(nextUser);
     upgradeV2Session();
     return nextUser;
@@ -95,6 +99,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loginWithGoogle = useCallback(async (idToken: string, expectedRole?: LoginRole) => {
     const nextUser = await apiGoogleLogin(idToken);
     requireLoginRole(nextUser, expectedRole);
+    clearV2Session();
     setUser(nextUser);
     upgradeV2Session();
     return nextUser;
@@ -103,6 +108,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loginMaster = useCallback(async (username: string, password: string, expectedRole?: LoginRole) => {
     const nextUser = await apiMasterLogin({ username, password });
     requireLoginRole(nextUser, expectedRole);
+    // Master sessions stay on the v1 API — ensure no stale v2 token lingers.
+    clearV2Session();
     setUser(nextUser);
     return nextUser;
   }, []);

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '@/design-revamp/hooks/useAuth';
-import { createMasterAccount, createReportV2, listUsers } from '@/design-revamp/lib/api';
+import { createMasterAccount, listUsers } from '@/design-revamp/lib/api';
 import { PageLoader } from '@/design-revamp/components/feedback/PageLoader';
 import { ErrorState } from '@/design-revamp/components/feedback/ErrorState';
 import { Button } from '@/design-revamp/components/ui/button';
@@ -17,7 +17,7 @@ import {
   CheckCircle2,
   AlertCircle,
   CircleUserRound,
-  FilePlus2,
+  Ban,
   Home,
 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
@@ -40,13 +40,6 @@ export default function AdminControlPage() {
   const [masterBusy, setMasterBusy] = useState(false);
   const [masterMsg, setMasterMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
-  const [reportTitle, setReportTitle] = useState('');
-  const [reportDesc, setReportDesc] = useState('');
-  const [reportLocation, setReportLocation] = useState('');
-  const [reportPriority, setReportPriority] = useState<'low' | 'medium' | 'high'>('medium');
-  const [reportBusy, setReportBusy] = useState(false);
-  const [reportMsg, setReportMsg] = useState<{ ok: boolean; text: string } | null>(null);
-
   const [users, setUsers] = useState<Array<{ _id: string; name: string; role: string }>>([]);
   const [usersLoading, setUsersLoading] = useState(false);
   const [usersError, setUsersError] = useState(false);
@@ -64,27 +57,6 @@ export default function AdminControlPage() {
       setMasterMsg({ ok: false, text: err instanceof Error ? err.message : 'Failed to create master account' });
     } finally {
       setMasterBusy(false);
-    }
-  }
-
-  async function handleCreateReport(e: React.FormEvent) {
-    e.preventDefault();
-    if (reportTitle.trim().length < 3) return;
-    setReportBusy(true);
-    setReportMsg(null);
-    try {
-      await createReportV2({
-        title: reportTitle.trim(),
-        description: reportDesc.trim() || undefined,
-        location_address: reportLocation.trim() || undefined,
-        priority: reportPriority,
-      });
-      setReportMsg({ ok: true, text: 'Report created and broadcast to supervisors.' });
-      setReportTitle(''); setReportDesc(''); setReportLocation('');
-    } catch (err) {
-      setReportMsg({ ok: false, text: err instanceof Error ? err.message : 'Failed to create report' });
-    } finally {
-      setReportBusy(false);
     }
   }
 
@@ -151,7 +123,7 @@ export default function AdminControlPage() {
       <main className="flex-1 mx-auto w-full max-w-4xl px-4 py-6 sm:px-6 space-y-6">
         <div>
           <h1 className="text-xl font-bold tracking-tight">Master Control</h1>
-          <p className="mt-1 text-xs text-muted-foreground">Role catalog, master account creation, and report creation on behalf of the community.</p>
+          <p className="mt-1 text-xs text-muted-foreground">Role catalog, master account creation, and directory tools for the control room.</p>
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -193,35 +165,15 @@ export default function AdminControlPage() {
 
         <Card className="border border-border/80">
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base"><FilePlus2 className="h-4 w-4 text-primary" />Create Report (on behalf)</CardTitle>
+            <CardTitle className="flex items-center gap-2 text-base"><Ban className="h-4 w-4 text-muted-foreground" />Report Submission</CardTitle>
           </CardHeader>
           <CardContent>
-            {reportMsg && (
-              <div className={`mb-3 flex items-center gap-2 rounded-lg border p-2.5 text-xs ${reportMsg.ok ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700' : 'border-destructive/20 bg-destructive/5 text-destructive'}`}>
-                {reportMsg.ok ? <CheckCircle2 className="h-3.5 w-3.5" /> : <AlertCircle className="h-3.5 w-3.5" />}
-                {reportMsg.text}
-              </div>
-            )}
-            <form onSubmit={handleCreateReport} className="space-y-3">
-              <input value={reportTitle} onChange={(e) => setReportTitle(e.target.value)} placeholder="Report title (min 3 chars)" required minLength={3} aria-label="Report title"
-                className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary" />
-              <textarea value={reportDesc} onChange={(e) => setReportDesc(e.target.value)} placeholder="Description (optional)" rows={2} maxLength={4000} aria-label="Report description"
-                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary" />
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <input value={reportLocation} onChange={(e) => setReportLocation(e.target.value)} placeholder="Location (optional)" aria-label="Report location"
-                  className="h-10 rounded-lg border border-input bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary" />
-                <select value={reportPriority} onChange={(e) => setReportPriority(e.target.value as 'low' | 'medium' | 'high')} aria-label="Report priority"
-                  className="h-10 rounded-lg border border-input bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
-                  <option value="low">Low</option>
-                  <option value="medium">Medium</option>
-                  <option value="high">High</option>
-                </select>
-              </div>
-              <Button type="submit" disabled={reportBusy || reportTitle.trim().length < 3} className="min-h-11">
-                {reportBusy ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <FilePlus2 className="mr-1.5 h-4 w-4" />}
-                Create Report
-              </Button>
-            </form>
+            <p className="text-xs text-muted-foreground">
+              Master accounts cannot submit public reports — the backend rejects them to keep
+              incident data reporter-owned. To file an issue, sign in with a reporter, cleaner,
+              or supervisor account and use <span className="font-medium">Submit Issue</span> from
+              the dashboard.
+            </p>
           </CardContent>
         </Card>
 

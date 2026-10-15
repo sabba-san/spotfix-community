@@ -263,6 +263,7 @@ model UserRoleV2 {
 model ReportV2 {
   id                    String   @id @default(cuid())
   tenantId              String
+  legacyReportId        String?
   tenant                Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   reporterUserId        String
   reporter              UserAccount @relation("ReportV2Reporter", fields: [reporterUserId], references: [id], onDelete: Cascade)
@@ -291,6 +292,7 @@ model ReportV2 {
   @@index([tenantId, assignedCleanerId, status])
   @@index([tenantId, assignedSupervisorId, status])
   @@index([tenantId, status, createdAt(sort: Desc)])
+  @@unique([tenantId, legacyReportId])
 }
 
 model ReportAttachmentV2 {

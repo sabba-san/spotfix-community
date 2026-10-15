@@ -295,6 +295,8 @@ async function seedStaffFromCsv(tenantId: string, dryRun: boolean): Promise<Staf
         const name = rowGet(entry.row, ['Name', 'name']);
         const loginId = rowGet(entry.row, ['Staff ID', 'staff_id', 'staffId', 'Login ID', 'login_id', 'loginId']);
         const location = rowGet(entry.row, ['Location', 'location']);
+        const email = rowGet(entry.row, ['Email', 'email']);
+        const phone = rowGet(entry.row, ['Phone', 'phone']);
 
         if (!name || !loginId || !location) {
             // eslint-disable-next-line no-console
@@ -325,6 +327,8 @@ async function seedStaffFromCsv(tenantId: string, dryRun: boolean): Promise<Staf
             loginId,
             name,
             role: 'supervisor',
+            email: email || undefined,
+            phone: phone || undefined,
             workLocation: location,
             dryRun
         });
@@ -352,6 +356,8 @@ async function seedStaffFromCsv(tenantId: string, dryRun: boolean): Promise<Staf
         const name = rowGet(entry.row, ['Name', 'name']);
         const loginId = rowGet(entry.row, ['Staff ID', 'staff_id', 'staffId', 'Login ID', 'login_id', 'loginId']);
         const location = rowGet(entry.row, ['Location', 'location']);
+        const email = rowGet(entry.row, ['Email', 'email']);
+        const phone = rowGet(entry.row, ['Phone', 'phone']);
 
         if (!name || !loginId || !location) {
             // eslint-disable-next-line no-console
@@ -384,6 +390,8 @@ async function seedStaffFromCsv(tenantId: string, dryRun: boolean): Promise<Staf
             loginId,
             name,
             role: 'cleaner',
+            email: email || undefined,
+            phone: phone || undefined,
             workLocation: location,
             dryRun
         });

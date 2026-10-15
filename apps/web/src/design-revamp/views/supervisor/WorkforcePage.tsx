@@ -4,6 +4,7 @@ import { useSupervisorCleanersV2 } from '@/design-revamp/hooks/useV2';
 import { PageLoader } from '@/design-revamp/components/feedback/PageLoader';
 import { ErrorState } from '@/design-revamp/components/feedback/ErrorState';
 import { EmptyState } from '@/design-revamp/components/feedback/EmptyState';
+import { RoleErrorBanner } from '@/design-revamp/components/feedback/RoleErrorBanner';
 import { Button } from '@/design-revamp/components/ui/button';
 import { Badge } from '@/design-revamp/components/ui/badge';
 import {
@@ -28,7 +29,7 @@ export default function SupervisorWorkforcePage() {
   const location = useLocation();
   const [search, setSearch] = useState('');
   const [appliedSearch, setAppliedSearch] = useState<string | undefined>(undefined);
-  const { data: cleaners, isLoading, isError, refetch } = useSupervisorCleanersV2(appliedSearch);
+  const { data: cleaners, isLoading, isError, error, refetch } = useSupervisorCleanersV2(appliedSearch);
 
   const allCleaners = cleaners ?? [];
   const busyCount = allCleaners.filter((c) => c.is_busy).length;
@@ -146,6 +147,9 @@ export default function SupervisorWorkforcePage() {
 
         {isLoading && <PageLoader />}
         {isError && <ErrorState onRetry={() => refetch()} />}
+        {!isLoading && (
+          <RoleErrorBanner errors={[error]} expectedRole="supervisor" onReconnect={() => refetch()} />
+        )}
 
         {!isLoading && !isError && allCleaners.length === 0 && (
           <EmptyState
