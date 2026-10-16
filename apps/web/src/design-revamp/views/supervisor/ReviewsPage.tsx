@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useAuth } from '@/design-revamp/hooks/useAuth';
 import { useSupervisorReportsV2 } from '@/design-revamp/hooks/useV2';
 import { ReportDetailDialog } from '@/design-revamp/components/composites/ReportDetailDialog';
 import {
@@ -13,39 +12,41 @@ import { RoleErrorBanner } from '@/design-revamp/components/feedback/RoleErrorBa
 import { Button } from '@/design-revamp/components/ui/button';
 import { Badge } from '@/design-revamp/components/ui/badge';
 import {
-  ShieldAlert,
-  ClipboardList,
-  Users,
-  UserPlus,
-  Home,
-  Inbox,
   RefreshCw,
   MapPin,
   CheckCircle2,
-  CircleUserRound,
-  Send,
 } from 'lucide-react';
 
 /** Supervisor review queue — resolutions awaiting endorsement + volunteer requests. */
 export default function SupervisorReviewsPage() {
-  const { user, logout } = useAuth();
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
   const reviewsQuery = useSupervisorReportsV2('resolved_by_cleaner');
 
   const reports = reviewsQuery.data?.reports ?? [];
 
   return (
-    <main className="flex-1 mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="space-y-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold tracking-tight">Resolution Reviews</h1>
-          <p className="mt-1 text-xs text-muted-foreground">
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl font-bold tracking-tight text-foreground">Resolution Reviews</h1>
+            <Badge variant="outline" className="border-violet-300 bg-violet-50 dark:bg-violet-950/40 text-violet-700 dark:text-violet-400 text-xs">
+              {reports.length} awaiting
+            </Badge>
+          </div>
+          <p className="mt-0.5 text-xs text-muted-foreground">
             Cleaner-submitted resolutions awaiting your endorsement. Open a report to endorse or request rework.
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={() => reviewsQuery.refetch()} disabled={reviewsQuery.isLoading} className="gap-1.5 text-xs">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => reviewsQuery.refetch()}
+          disabled={reviewsQuery.isLoading}
+          className="h-8 gap-1.5 text-xs active:scale-[0.98] self-start sm:self-auto"
+        >
           <RefreshCw className={`h-3.5 w-3.5 ${reviewsQuery.isLoading ? 'animate-spin' : ''}`} />
-          Refresh Queue
+          Refresh
         </Button>
       </div>
 
@@ -90,6 +91,6 @@ export default function SupervisorReviewsPage() {
       {selectedReportId && (
         <ReportDetailDialog reportId={selectedReportId} assignTools={false} onClose={() => setSelectedReportId(null)} />
       )}
-    </main>
+    </div>
   );
 }

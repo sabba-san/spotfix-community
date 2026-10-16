@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useAuth } from '@/design-revamp/hooks/useAuth';
 import { useSupervisorCleanersV2 } from '@/design-revamp/hooks/useV2';
 import { PageLoader } from '@/design-revamp/components/feedback/PageLoader';
 import { ErrorState } from '@/design-revamp/components/feedback/ErrorState';
@@ -8,24 +7,16 @@ import { RoleErrorBanner } from '@/design-revamp/components/feedback/RoleErrorBa
 import { Button } from '@/design-revamp/components/ui/button';
 import { Badge } from '@/design-revamp/components/ui/badge';
 import {
-  ShieldAlert,
-  ClipboardList,
-  Users,
   UserPlus,
-  Home,
-  Inbox,
   RefreshCw,
   MapPin,
   Phone,
   Briefcase,
-  CircleUserRound,
-  Send,
+  Users,
 } from 'lucide-react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 export default function SupervisorWorkforcePage() {
-  const { user, logout } = useAuth();
-  const location = useLocation();
   const [search, setSearch] = useState('');
   const [appliedSearch, setAppliedSearch] = useState<string | undefined>(undefined);
   const { data: cleaners, isLoading, isError, error, refetch } = useSupervisorCleanersV2(appliedSearch);
@@ -35,22 +26,27 @@ export default function SupervisorWorkforcePage() {
   const availableCount = allCleaners.filter((c) => !c.is_busy).length;
 
   return (
-    <main className="flex-1 mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="space-y-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-foreground">Workforce Roster & Duty Status</h1>
-          <p className="mt-1 text-xs text-muted-foreground">
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl font-bold tracking-tight text-foreground">Workforce Roster</h1>
+            <Badge variant="outline" className="text-xs">
+              {allCleaners.length} staff ({availableCount} available, {busyCount} busy)
+            </Badge>
+          </div>
+          <p className="mt-0.5 text-xs text-muted-foreground">
             Cleaner accounts with live availability from active assignments.
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button asChild size="sm" className="gradient-bg text-white gap-1.5 active:scale-[0.98]">
+          <Button asChild size="sm" className="h-8 gradient-bg text-white gap-1.5 active:scale-[0.98]">
             <Link to="/supervisor/onboard">
-              <UserPlus className="h-4 w-4" />
+              <UserPlus className="h-3.5 w-3.5" />
               Add Cleaner
             </Link>
           </Button>
-          <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isLoading} className="active:scale-[0.98]">
+          <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isLoading} className="h-8 active:scale-[0.98]">
             <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? 'animate-spin' : ''}`} />
           </Button>
         </div>
@@ -144,6 +140,6 @@ export default function SupervisorWorkforcePage() {
           ))}
         </div>
       )}
-    </main>
+    </div>
   );
 }

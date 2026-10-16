@@ -1,29 +1,19 @@
 import { useState } from 'react';
-import { useNavigate, Link, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/design-revamp/hooks/useAuth';
 import { provisionUser, createCleaner } from '@/design-revamp/lib/api';
 import { Button } from '@/design-revamp/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/design-revamp/components/ui/card';
 import { Label } from '@/design-revamp/components/ui/label';
 import {
-  ShieldAlert,
-  ClipboardList,
-  Users,
-  UserPlus,
-  Home,
-  Inbox,
-  LogOut,
   Loader2,
   CheckCircle2,
   AlertCircle,
-  Send,
-  CircleUserRound,
 } from 'lucide-react';
 
 export default function SupervisorOnboardPage() {
   const navigate = useNavigate();
-  const location = useLocation();
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
 
   const [name, setName] = useState('');
   const [workId, setWorkId] = useState('');
@@ -82,12 +72,12 @@ export default function SupervisorOnboardPage() {
   };
 
   return (
-    <main className="flex-1 mx-auto w-full max-w-2xl px-4 py-8 sm:px-6 space-y-6">
+    <div className="max-w-2xl mx-auto space-y-4">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">
+        <h1 className="text-xl font-bold tracking-tight text-foreground">
           Onboard Cleaner Staff
         </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <p className="mt-0.5 text-xs text-muted-foreground">
           Register field personnel credentials and designate primary zone coverage.
         </p>
       </div>
@@ -208,6 +198,6 @@ export default function SupervisorOnboardPage() {
           </form>
         </CardContent>
       </Card>
-    </main>
+    </div>
   );
 }

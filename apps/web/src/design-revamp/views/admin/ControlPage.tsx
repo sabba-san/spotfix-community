@@ -1,26 +1,16 @@
 import { useState } from 'react';
-import { useAuth } from '@/design-revamp/hooks/useAuth';
 import { createMasterAccount, listUsers } from '@/design-revamp/lib/api';
-import { PageLoader } from '@/design-revamp/components/feedback/PageLoader';
 import { ErrorState } from '@/design-revamp/components/feedback/ErrorState';
 import { Button } from '@/design-revamp/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/design-revamp/components/ui/card';
 import { Badge } from '@/design-revamp/components/ui/badge';
 import {
-  ShieldCheck,
-  LayoutDashboard,
-  Users2,
-  UserPlus,
-  KeyRound,
-  LogOut,
   Loader2,
   CheckCircle2,
   AlertCircle,
-  CircleUserRound,
   Ban,
-  Home,
+  KeyRound,
 } from 'lucide-react';
-import { Link, useLocation } from 'react-router-dom';
 
 const ROLE_CARDS = [
   { role: 'Public', desc: 'Submit and track own reports', tone: 'border-slate-300 bg-slate-50 text-slate-700' },
@@ -30,9 +20,6 @@ const ROLE_CARDS = [
 ];
 
 export default function AdminControlPage() {
-  const { user, logout } = useAuth();
-  const location = useLocation();
-
   const [username, setUsername] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [password, setPassword] = useState('');
@@ -74,10 +61,10 @@ export default function AdminControlPage() {
   }
 
   return (
-    <main className="flex-1 mx-auto w-full max-w-4xl px-4 py-6 sm:px-6 space-y-6">
+    <div className="max-w-4xl mx-auto space-y-4">
       <div>
-        <h1 className="text-xl font-bold tracking-tight">Master Control</h1>
-        <p className="mt-1 text-xs text-muted-foreground">Role catalog, master account creation, and directory tools for the control room.</p>
+        <h1 className="text-xl font-bold tracking-tight text-foreground">Master Control</h1>
+        <p className="mt-0.5 text-xs text-muted-foreground">Role catalog, master account creation, and directory tools for the control room.</p>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -155,6 +142,6 @@ export default function AdminControlPage() {
           )}
         </CardContent>
       </Card>
-    </main>
+    </div>
   );
 }

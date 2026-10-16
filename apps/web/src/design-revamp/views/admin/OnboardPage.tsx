@@ -1,28 +1,17 @@
 import { useState } from 'react';
-import { useNavigate, Link, useLocation } from 'react-router-dom';
-import { useAuth } from '@/design-revamp/hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
 import { provisionUser, createCleaner } from '@/design-revamp/lib/api';
 import { Button } from '@/design-revamp/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/design-revamp/components/ui/card';
 import { Label } from '@/design-revamp/components/ui/label';
 import {
-  ShieldCheck,
-  LayoutDashboard,
-  Users2,
-  UserPlus,
-  KeyRound,
-  CircleUserRound,
-  LogOut,
   Loader2,
   CheckCircle2,
   AlertCircle,
-  Home,
 } from 'lucide-react';
 
 export default function AdminOnboardPage() {
   const navigate = useNavigate();
-  const location = useLocation();
-  const { user, logout } = useAuth();
 
   const [name, setName] = useState('');
   const [role, setRole] = useState<'cleaner' | 'supervisor'>('cleaner');
@@ -81,12 +70,12 @@ export default function AdminOnboardPage() {
   };
 
   return (
-    <main className="flex-1 mx-auto w-full max-w-2xl px-4 py-8 sm:px-6 space-y-6">
+    <div className="max-w-2xl mx-auto space-y-4">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">
+        <h1 className="text-xl font-bold tracking-tight text-foreground">
           Provision Staff Account
         </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <p className="mt-0.5 text-xs text-muted-foreground">
           Create administrative or cleaning workforce credentials with direct system permissions.
         </p>
       </div>
@@ -251,6 +240,6 @@ export default function AdminOnboardPage() {
           </form>
         </CardContent>
       </Card>
-    </main>
+    </div>
   );
 }

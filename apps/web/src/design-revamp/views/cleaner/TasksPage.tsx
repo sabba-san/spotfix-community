@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/design-revamp/hooks/useAuth';
 import {
   useAvailableReportsV2,
@@ -19,14 +19,11 @@ import { PageLoader } from '@/design-revamp/components/feedback/PageLoader';
 import { ErrorState } from '@/design-revamp/components/feedback/ErrorState';
 import { EmptyState } from '@/design-revamp/components/feedback/EmptyState';
 import { Button } from '@/design-revamp/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/design-revamp/components/ui/card';
 import { Badge } from '@/design-revamp/components/ui/badge';
 import {
-  ClipboardCheck,
   CheckCircle2,
   MapPin,
   RefreshCw,
-  LogOut,
   Camera,
   Play,
   Check,
@@ -35,10 +32,7 @@ import {
   ListTodo,
   Search,
   X,
-  Home,
-  CircleUserRound,
 } from 'lucide-react';
-import { Link, useLocation } from 'react-router-dom';
 
 type CleanerTab = 'tasks' | 'available' | 'history';
 
@@ -142,8 +136,7 @@ function DetailModal({ reportId, onClose }: { reportId: string; onClose: () => v
 }
 
 export default function CleanerTasksPage() {
-  const { user, logout } = useAuth();
-  const location = useLocation();
+  const { user } = useAuth();
   const [tab, setTab] = useState<CleanerTab>('tasks');
   const [openId, setOpenId] = useState<string | null>(null);
 
@@ -243,75 +236,33 @@ export default function CleanerTasksPage() {
   const activeQuery = tab === 'tasks' ? tasksQuery : tab === 'available' ? availableQuery : historyQuery;
 
   return (
-    <div className="min-h-[100dvh] bg-background text-foreground flex flex-col">
-      <header className="sticky top-0 z-40 border-b border-border/80 bg-background/95 backdrop-blur-md">
-        <div className="mx-auto flex min-h-14 max-w-4xl flex-wrap items-center justify-between gap-x-3 gap-y-2 px-4 py-2 sm:px-6">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600 font-bold">
-              <ClipboardCheck className="h-4.5 w-4.5" />
-            </div>
-            <div>
-              <span className="text-sm font-bold tracking-tight">SpotFix Field</span>
-              <span className="hidden sm:inline text-xs text-muted-foreground ml-2">Cleaner Operations</span>
-            </div>
-          </div>
-          <nav className="order-3 flex w-full items-center gap-1 overflow-x-auto md:order-none md:w-auto" aria-label="Cleaner navigation">
-            {[
-              { to: '/dashboard', label: 'Dashboard', icon: Home },
-              { to: '/cleaner/tasks', label: 'Tasks', icon: ListTodo },
-              { to: '/cleaner/account', label: 'My Profile', icon: CircleUserRound },
-            ].map((item) => {
-              const isActive = location.pathname === item.to;
-              return (
-                <Link
-                  key={item.to}
-                  to={item.to}
-                  className={`flex min-h-10 shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-colors ${
-                    isActive
-                      ? 'bg-primary/10 text-primary font-semibold'
-                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                  }`}
-                >
-                  <item.icon className="h-3.5 w-3.5" />
-                  {item.label}
-                </Link>
-              );
-            })}
-          </nav>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground font-medium hidden sm:inline">{user?.name}</span>
-            <Button variant="ghost" size="sm" onClick={logout} className="h-8 gap-1.5 px-2 text-xs text-muted-foreground hover:text-destructive">
-              <LogOut className="h-3.5 w-3.5" />
-              <span>Sign out</span>
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      <main className="flex-1 mx-auto w-full max-w-4xl px-4 py-6 sm:px-6 space-y-6">
-        <div className="rounded-2xl border border-border/80 bg-card p-5 shadow-sm">
+    <div className="space-y-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
           <div className="flex items-center gap-2">
             <h1 className="text-xl font-bold tracking-tight">Task Command Center</h1>
             <Badge variant="outline" className="border-amber-300 bg-amber-50 text-amber-700 text-xs">Field Staff</Badge>
           </div>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Staff ID: {user?.idNumber || 'N/A'} | Zone: {user?.workLocation || 'General Facilities'}
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Zone: {user?.workLocation || 'General Facilities'} | ID: {user?.idNumber || 'N/A'}
           </p>
-          <div className="grid grid-cols-3 gap-2.5 mt-5">
-            <div className="rounded-xl border bg-muted/30 p-3 text-center">
-              <span className="text-[11px] font-medium text-muted-foreground">My Tasks</span>
-              <p className="text-xl font-bold tabular-nums mt-0.5">{tasksQuery.data?.total ?? tasks.length}</p>
-            </div>
-            <div className="rounded-xl border bg-blue-500/5 p-3 text-center">
-              <span className="text-[11px] font-medium text-blue-700">Available</span>
-              <p className="text-xl font-bold tabular-nums text-blue-700 mt-0.5">{availableQuery.data?.total ?? available.length}</p>
-            </div>
-            <div className="rounded-xl border bg-emerald-500/5 p-3 text-center">
-              <span className="text-[11px] font-medium text-emerald-700">History</span>
-              <p className="text-xl font-bold tabular-nums text-emerald-700 mt-0.5">{historyQuery.data?.total ?? history.length}</p>
-            </div>
-          </div>
         </div>
+      </div>
+
+      <div className="grid grid-cols-3 gap-2.5">
+        <div className="flex items-center justify-between rounded-lg border border-border/70 bg-card/60 px-3 py-2 shadow-2xs">
+          <span className="text-xs text-muted-foreground font-medium">My Tasks</span>
+          <span className="text-lg font-bold text-foreground">{tasksQuery.data?.total ?? tasks.length}</span>
+        </div>
+        <div className="flex items-center justify-between rounded-lg border border-border/70 bg-card/60 px-3 py-2 shadow-2xs">
+          <span className="text-xs text-muted-foreground font-medium">Available</span>
+          <span className="text-lg font-bold text-blue-600 dark:text-blue-400">{availableQuery.data?.total ?? available.length}</span>
+        </div>
+        <div className="flex items-center justify-between rounded-lg border border-border/70 bg-card/60 px-3 py-2 shadow-2xs">
+          <span className="text-xs text-muted-foreground font-medium">History</span>
+          <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400">{historyQuery.data?.total ?? history.length}</span>
+        </div>
+      </div>
 
         <div className="flex gap-1.5 rounded-xl bg-muted/60 p-1" role="tablist" aria-label="Cleaner views">
           {([
@@ -417,9 +368,6 @@ export default function CleanerTasksPage() {
             </div>
           )
         )}
-
-      </main>
-
       {openId && <DetailModal reportId={openId} onClose={() => setOpenId(null)} />}
     </div>
   );

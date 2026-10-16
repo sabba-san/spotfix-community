@@ -105,7 +105,7 @@ export function PublicLayout({ children }: { children?: ReactNode }) {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 mb-16 md:mb-6">
+      <main className="flex-1 mx-auto w-full max-w-5xl px-4 py-4 sm:px-6 pb-20 md:pb-6">
         {children || <Outlet />}
       </main>
 

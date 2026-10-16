@@ -1,6 +1,4 @@
 import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { useAuth } from '@/design-revamp/hooks/useAuth';
 import {
   useSupervisorDashboardV2,
   useSupervisorReportsV2,
@@ -18,17 +16,9 @@ import { RoleErrorBanner } from '@/design-revamp/components/feedback/RoleErrorBa
 import { Button } from '@/design-revamp/components/ui/button';
 import { Badge } from '@/design-revamp/components/ui/badge';
 import {
-  ShieldAlert,
-  ClipboardList,
-  Users,
-  UserPlus,
-  Home,
-  Inbox,
   RefreshCw,
-  MapPin,
   CheckCircle2,
-  CircleUserRound,
-  Send,
+  MapPin,
 } from 'lucide-react';
 
 const STATUS_FILTERS = [
@@ -44,8 +34,6 @@ const STATUS_FILTERS = [
 ];
 
 export default function SupervisorTaskBoardPage() {
-  const { user, logout } = useAuth();
-  const location = useLocation();
   const [statusFilter, setStatusFilter] = useState('All');
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
 
@@ -62,46 +50,52 @@ export default function SupervisorTaskBoardPage() {
   const resolvedCount = (summary?.endorsed_by_supervisor ?? 0) + (summary?.closed ?? 0);
 
   return (
-    <main className="flex-1 mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 space-y-6">
-      <div className="rounded-2xl border border-border/80 bg-card p-5 shadow-sm">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
+    <div className="space-y-4">
+      {/* Compact Header Row */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-2">
             <h1 className="text-xl font-bold tracking-tight text-foreground">Incident Dispatch & Triage</h1>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Review verified community complaints and assign active field cleaners to open zones.
-            </p>
+            <Badge variant="outline" className="border-amber-300 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 text-xs">
+              {pendingCount} pending
+            </Badge>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              dashboard.refetch();
-              reportsQuery.refetch();
-            }}
-            disabled={reportsQuery.isLoading}
-            className="gap-1.5 text-xs active:scale-[0.98]"
-          >
-            <RefreshCw className={`h-3.5 w-3.5 ${reportsQuery.isLoading ? 'animate-spin' : ''}`} />
-            Refresh Board
-          </Button>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            Review verified community complaints and assign active field cleaners to open zones.
+          </p>
         </div>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 mt-5">
-          <div className="rounded-xl border bg-card p-3">
-            <span className="text-xs text-muted-foreground font-medium">Pending Triage</span>
-            <p className="text-2xl font-bold text-amber-600 mt-0.5">{dashboard.isLoading ? '…' : pendingCount}</p>
-          </div>
-          <div className="rounded-xl border bg-card p-3">
-            <span className="text-xs text-muted-foreground font-medium">In Progress</span>
-            <p className="text-2xl font-bold text-blue-600 mt-0.5">{dashboard.isLoading ? '…' : inProgressCount}</p>
-          </div>
-          <div className="rounded-xl border bg-card p-3">
-            <span className="text-xs text-muted-foreground font-medium">Awaiting Review</span>
-            <p className="text-2xl font-bold text-violet-600 mt-0.5">{dashboard.isLoading ? '…' : awaitingReview}</p>
-          </div>
-          <div className="rounded-xl border bg-card p-3">
-            <span className="text-xs text-muted-foreground font-medium">Resolved Total</span>
-            <p className="text-2xl font-bold text-emerald-600 mt-0.5">{dashboard.isLoading ? '…' : resolvedCount}</p>
-          </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            dashboard.refetch();
+            reportsQuery.refetch();
+          }}
+          disabled={reportsQuery.isLoading}
+          className="h-8 gap-1.5 text-xs active:scale-[0.98] self-start sm:self-auto"
+        >
+          <RefreshCw className={`h-3.5 w-3.5 ${reportsQuery.isLoading ? 'animate-spin' : ''}`} />
+          Refresh
+        </Button>
+      </div>
+
+      {/* Condensed Single-Row Stat Strip */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+        <div className="flex items-center justify-between rounded-lg border border-border/70 bg-card/60 px-3 py-2 shadow-2xs">
+          <span className="text-xs text-muted-foreground font-medium">Pending Triage</span>
+          <span className="text-lg font-bold text-amber-600 dark:text-amber-400">{dashboard.isLoading ? '…' : pendingCount}</span>
+        </div>
+        <div className="flex items-center justify-between rounded-lg border border-border/70 bg-card/60 px-3 py-2 shadow-2xs">
+          <span className="text-xs text-muted-foreground font-medium">In Progress</span>
+          <span className="text-lg font-bold text-blue-600 dark:text-blue-400">{dashboard.isLoading ? '…' : inProgressCount}</span>
+        </div>
+        <div className="flex items-center justify-between rounded-lg border border-border/70 bg-card/60 px-3 py-2 shadow-2xs">
+          <span className="text-xs text-muted-foreground font-medium">Awaiting Review</span>
+          <span className="text-lg font-bold text-violet-600 dark:text-violet-400">{dashboard.isLoading ? '…' : awaitingReview}</span>
+        </div>
+        <div className="flex items-center justify-between rounded-lg border border-border/70 bg-card/60 px-3 py-2 shadow-2xs">
+          <span className="text-xs text-muted-foreground font-medium">Resolved Total</span>
+          <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400">{dashboard.isLoading ? '…' : resolvedCount}</span>
         </div>
       </div>
 
@@ -180,6 +174,6 @@ export default function SupervisorTaskBoardPage() {
           onClose={() => setSelectedReportId(null)}
         />
       )}
-    </main>
+    </div>
   );
 }

@@ -1,25 +1,9 @@
-import { Link, useLocation } from 'react-router-dom';
-import { useAuth } from '@/design-revamp/hooks/useAuth';
 import { useReports, useUsers, useCleaners } from '@/design-revamp/hooks/useReports';
 import { PageLoader } from '@/design-revamp/components/feedback/PageLoader';
 import { ErrorState } from '@/design-revamp/components/feedback/ErrorState';
 import { Button } from '@/design-revamp/components/ui/button';
 import { Badge } from '@/design-revamp/components/ui/badge';
-import {
-  ShieldCheck,
-  LayoutDashboard,
-  Users2,
-  UserPlus,
-  KeyRound,
-  RefreshCw,
-  LogOut,
-  Activity,
-  CheckCircle2,
-  Users,
-  Server,
-  CircleUserRound,
-  Home,
-} from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 
 function v1StatusTone(status: string): string {
   if (status === 'Resolved') return 'border-emerald-300 bg-emerald-50 text-emerald-700';
@@ -34,8 +18,6 @@ function v1StatusTone(status: string): string {
 const ACTIVE_STATUSES = new Set(['Reported', 'Pending', 'Submitted', 'Assigned']);
 
 export default function AdminOverviewPage() {
-  const { user, logout } = useAuth();
-  const location = useLocation();
   // Master sessions stay on the v1 API by design (no v2 device session),
   // so the control room reads live data from the v1 endpoints.
   const reportsQuery = useReports();
@@ -70,50 +52,39 @@ export default function AdminOverviewPage() {
     .slice(0, 6);
 
   return (
-    <main className="flex-1 mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="space-y-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-foreground">Community Health & Infrastructure Overview</h1>
-          <p className="mt-1 text-xs text-muted-foreground">Operational metrics across all roles, pulled live from the v1 API.</p>
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl font-bold tracking-tight text-foreground">Infrastructure Overview</h1>
+            <Badge variant="outline" className="text-xs">
+              {reports.length} total reports
+            </Badge>
+          </div>
+          <p className="mt-0.5 text-xs text-muted-foreground">Operational metrics across all roles, pulled live from v1 endpoints.</p>
         </div>
-        <Button variant="outline" size="sm" onClick={() => refetchAll()} disabled={isLoading} className="gap-1.5 text-xs">
+        <Button variant="outline" size="sm" onClick={() => refetchAll()} disabled={isLoading} className="h-8 gap-1.5 text-xs self-start sm:self-auto">
           <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-          Refresh Analytics
+          Refresh
         </Button>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <div className="rounded-xl border bg-card p-4">
-          <div className="flex items-center justify-between text-muted-foreground">
-            <span className="text-xs font-medium">Active Reports</span>
-            <Activity className="h-4 w-4 text-primary" />
-          </div>
-          <p className="text-2xl font-bold text-foreground mt-2">{isLoading ? '…' : activeCount}</p>
-          <span className="text-[11px] text-muted-foreground">Awaiting action</span>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+        <div className="flex items-center justify-between rounded-lg border border-border/70 bg-card/60 px-3 py-2 shadow-2xs">
+          <span className="text-xs text-muted-foreground font-medium">Active</span>
+          <span className="text-lg font-bold text-foreground">{isLoading ? '…' : activeCount}</span>
         </div>
-        <div className="rounded-xl border bg-card p-4">
-          <div className="flex items-center justify-between text-muted-foreground">
-            <span className="text-xs font-medium">Awaiting Review</span>
-            <Users className="h-4 w-4 text-violet-600" />
-          </div>
-          <p className="text-2xl font-bold text-violet-600 mt-2">{isLoading ? '…' : awaitingReview}</p>
-          <span className="text-[11px] text-muted-foreground">Cleaner resolutions</span>
+        <div className="flex items-center justify-between rounded-lg border border-border/70 bg-card/60 px-3 py-2 shadow-2xs">
+          <span className="text-xs text-muted-foreground font-medium">Review</span>
+          <span className="text-lg font-bold text-violet-600 dark:text-violet-400">{isLoading ? '…' : awaitingReview}</span>
         </div>
-        <div className="rounded-xl border bg-card p-4">
-          <div className="flex items-center justify-between text-muted-foreground">
-            <span className="text-xs font-medium">Resolved</span>
-            <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-          </div>
-          <p className="text-2xl font-bold text-emerald-600 mt-2">{isLoading ? '…' : resolvedCount}</p>
-          <span className="text-[11px] text-muted-foreground">Endorsed completions</span>
+        <div className="flex items-center justify-between rounded-lg border border-border/70 bg-card/60 px-3 py-2 shadow-2xs">
+          <span className="text-xs text-muted-foreground font-medium">Resolved</span>
+          <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400">{isLoading ? '…' : resolvedCount}</span>
         </div>
-        <div className="rounded-xl border bg-card p-4">
-          <div className="flex items-center justify-between text-muted-foreground">
-            <span className="text-xs font-medium">Rejected</span>
-            <Server className="h-4 w-4 text-rose-600" />
-          </div>
-          <p className="text-2xl font-bold text-rose-600 mt-2">{isLoading ? '…' : rejectedCount}</p>
-          <span className="text-[11px] text-muted-foreground">Declined / sent back</span>
+        <div className="flex items-center justify-between rounded-lg border border-border/70 bg-card/60 px-3 py-2 shadow-2xs">
+          <span className="text-xs text-muted-foreground font-medium">Rejected</span>
+          <span className="text-lg font-bold text-rose-600 dark:text-rose-400">{isLoading ? '…' : rejectedCount}</span>
         </div>
       </div>
 
@@ -158,6 +129,6 @@ export default function AdminOverviewPage() {
           </div>
         </div>
       </div>
-    </main>
+    </div>
   );
 }

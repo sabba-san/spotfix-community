@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useAuth } from '@/design-revamp/hooks/useAuth';
 import { useUsers } from '@/design-revamp/hooks/useReports';
 import { PageLoader } from '@/design-revamp/components/feedback/PageLoader';
 import { ErrorState } from '@/design-revamp/components/feedback/ErrorState';
@@ -7,18 +6,12 @@ import { EmptyState } from '@/design-revamp/components/feedback/EmptyState';
 import { Button } from '@/design-revamp/components/ui/button';
 import { Badge } from '@/design-revamp/components/ui/badge';
 import {
-  ShieldCheck,
-  LayoutDashboard,
-  Users2,
   UserPlus,
-  KeyRound,
   RefreshCw,
-  LogOut,
   Search,
-  CircleUserRound,
-  Home,
+  Users2,
 } from 'lucide-react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 // v1 serialized user: {_id, name, idNumber, email?, phone?, workLocation?,
 // role: 'public'|'supervisor'|'cleaner', status, ...}
@@ -46,8 +39,6 @@ const ROLE_STYLE: Record<string, string> = {
 };
 
 export default function AdminUsersPage() {
-  const { user, logout } = useAuth();
-  const location = useLocation();
   const [search, setSearch] = useState('');
   const [applied, setApplied] = useState('');
   // Master sessions stay on the v1 API by design: live directory from
@@ -71,17 +62,22 @@ export default function AdminUsersPage() {
   const cleanerCount = users.filter((u) => u.role === 'cleaner').length;
 
   return (
-    <main className="flex-1 mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="space-y-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold tracking-tight">User Directory</h1>
-          <p className="mt-1 text-xs text-muted-foreground">Search accounts across all roles. {users.length} total ({publicCount} public · {supervisorCount} supervisors · {cleanerCount} cleaners).</p>
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl font-bold tracking-tight text-foreground">User Directory</h1>
+            <Badge variant="outline" className="text-xs">
+              {users.length} accounts ({publicCount} public · {supervisorCount} sup · {cleanerCount} cln)
+            </Badge>
+          </div>
+          <p className="mt-0.5 text-xs text-muted-foreground">Search and manage accounts across all system roles.</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button asChild size="sm" className="gradient-bg text-white gap-1.5">
-            <Link to="/admin/onboard"><UserPlus className="h-4 w-4" />Provision Staff</Link>
+          <Button asChild size="sm" className="h-8 gradient-bg text-white gap-1.5 active:scale-[0.98]">
+            <Link to="/admin/onboard"><UserPlus className="h-3.5 w-3.5" />Provision Staff</Link>
           </Button>
-          <Button variant="outline" size="sm" onClick={() => usersQuery.refetch()} disabled={usersQuery.isLoading}>
+          <Button variant="outline" size="sm" onClick={() => usersQuery.refetch()} disabled={usersQuery.isLoading} className="h-8 active:scale-[0.98]">
             <RefreshCw className={`h-3.5 w-3.5 ${usersQuery.isLoading ? 'animate-spin' : ''}`} />
           </Button>
         </div>
@@ -142,6 +138,6 @@ export default function AdminUsersPage() {
           .
         </p>
       )}
-    </main>
+    </div>
   );
 }
