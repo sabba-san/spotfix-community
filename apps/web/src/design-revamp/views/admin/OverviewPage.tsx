@@ -69,151 +69,95 @@ export default function AdminOverviewPage() {
     })
     .slice(0, 6);
 
-  const navLinks = [
-    { to: '/dashboard', label: 'Dashboard', icon: Home },
-    { to: '/admin/overview', label: 'Overview', icon: LayoutDashboard },
-    { to: '/admin/users', label: 'Users', icon: Users2 },
-    { to: '/admin/onboard', label: 'Onboarding', icon: UserPlus },
-    { to: '/admin/control', label: 'Control', icon: KeyRound },
-    { to: '/admin/account', label: 'Account', icon: CircleUserRound },
-  ];
-
   return (
-    <div className="min-h-[100dvh] bg-background text-foreground flex flex-col">
-      <header className="sticky top-0 z-40 border-b border-border/80 bg-background/95 backdrop-blur-md">
-        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-600 font-bold">
-              <ShieldCheck className="h-4.5 w-4.5" />
-            </div>
-            <div>
-              <span className="text-sm font-bold tracking-tight">SpotFix Control Room</span>
-              <span className="hidden sm:inline text-xs text-muted-foreground ml-2">Admin Administration</span>
-            </div>
-          </div>
-          <nav className="flex max-w-[55vw] items-center gap-1 overflow-x-auto" aria-label="Admin navigation">
-            {navLinks.map((item) => {
-              const isActive = location.pathname === item.to;
-              return (
-                <Link
-                  key={item.to}
-                  to={item.to}
-                  className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors active:scale-[0.98] ${
-                    isActive
-                      ? 'bg-primary/10 text-primary font-semibold'
-                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                  }`}
-                >
-                  <item.icon className="h-4 w-4" />
-                  {item.label}
-                </Link>
-              );
-            })}
-          </nav>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground font-medium hidden sm:inline">{user?.name} (Admin)</span>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={logout}
-              className="h-8 gap-1.5 px-2 text-xs text-muted-foreground hover:text-destructive active:scale-[0.98]"
-            >
-              <LogOut className="h-3.5 w-3.5" />
-              <span>Sign out</span>
-            </Button>
-          </div>
+    <main className="flex-1 mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-bold tracking-tight text-foreground">Community Health & Infrastructure Overview</h1>
+          <p className="mt-1 text-xs text-muted-foreground">Operational metrics across all roles, pulled live from the v1 API.</p>
         </div>
-      </header>
+        <Button variant="outline" size="sm" onClick={() => refetchAll()} disabled={isLoading} className="gap-1.5 text-xs">
+          <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+          Refresh Analytics
+        </Button>
+      </div>
 
-      <main className="flex-1 mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-xl font-bold tracking-tight text-foreground">Community Health & Infrastructure Overview</h1>
-            <p className="mt-1 text-xs text-muted-foreground">Operational metrics across all roles, pulled live from the v1 API.</p>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="rounded-xl border bg-card p-4">
+          <div className="flex items-center justify-between text-muted-foreground">
+            <span className="text-xs font-medium">Active Reports</span>
+            <Activity className="h-4 w-4 text-primary" />
           </div>
-          <Button variant="outline" size="sm" onClick={() => refetchAll()} disabled={isLoading} className="gap-1.5 text-xs">
-            <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-            Refresh Analytics
-          </Button>
+          <p className="text-2xl font-bold text-foreground mt-2">{isLoading ? '…' : activeCount}</p>
+          <span className="text-[11px] text-muted-foreground">Awaiting action</span>
         </div>
-
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <div className="rounded-xl border bg-card p-4">
-            <div className="flex items-center justify-between text-muted-foreground">
-              <span className="text-xs font-medium">Active Reports</span>
-              <Activity className="h-4 w-4 text-primary" />
-            </div>
-            <p className="text-2xl font-bold text-foreground mt-2">{isLoading ? '…' : activeCount}</p>
-            <span className="text-[11px] text-muted-foreground">Awaiting action</span>
+        <div className="rounded-xl border bg-card p-4">
+          <div className="flex items-center justify-between text-muted-foreground">
+            <span className="text-xs font-medium">Awaiting Review</span>
+            <Users className="h-4 w-4 text-violet-600" />
           </div>
-          <div className="rounded-xl border bg-card p-4">
-            <div className="flex items-center justify-between text-muted-foreground">
-              <span className="text-xs font-medium">Awaiting Review</span>
-              <Users className="h-4 w-4 text-violet-600" />
-            </div>
-            <p className="text-2xl font-bold text-violet-600 mt-2">{isLoading ? '…' : awaitingReview}</p>
-            <span className="text-[11px] text-muted-foreground">Cleaner resolutions</span>
-          </div>
-          <div className="rounded-xl border bg-card p-4">
-            <div className="flex items-center justify-between text-muted-foreground">
-              <span className="text-xs font-medium">Resolved</span>
-              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-            </div>
-            <p className="text-2xl font-bold text-emerald-600 mt-2">{isLoading ? '…' : resolvedCount}</p>
-            <span className="text-[11px] text-muted-foreground">Endorsed completions</span>
-          </div>
-          <div className="rounded-xl border bg-card p-4">
-            <div className="flex items-center justify-between text-muted-foreground">
-              <span className="text-xs font-medium">Rejected</span>
-              <Server className="h-4 w-4 text-rose-600" />
-            </div>
-            <p className="text-2xl font-bold text-rose-600 mt-2">{isLoading ? '…' : rejectedCount}</p>
-            <span className="text-[11px] text-muted-foreground">Declined / sent back</span>
-          </div>
+          <p className="text-2xl font-bold text-violet-600 mt-2">{isLoading ? '…' : awaitingReview}</p>
+          <span className="text-[11px] text-muted-foreground">Cleaner resolutions</span>
         </div>
+        <div className="rounded-xl border bg-card p-4">
+          <div className="flex items-center justify-between text-muted-foreground">
+            <span className="text-xs font-medium">Resolved</span>
+            <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+          </div>
+          <p className="text-2xl font-bold text-emerald-600 mt-2">{isLoading ? '…' : resolvedCount}</p>
+          <span className="text-[11px] text-muted-foreground">Endorsed completions</span>
+        </div>
+        <div className="rounded-xl border bg-card p-4">
+          <div className="flex items-center justify-between text-muted-foreground">
+            <span className="text-xs font-medium">Rejected</span>
+            <Server className="h-4 w-4 text-rose-600" />
+          </div>
+          <p className="text-2xl font-bold text-rose-600 mt-2">{isLoading ? '…' : rejectedCount}</p>
+          <span className="text-[11px] text-muted-foreground">Declined / sent back</span>
+        </div>
+      </div>
 
-        <div className="rounded-2xl border border-border/80 bg-card p-5 space-y-4">
-          <h2 className="text-base font-semibold text-foreground">Recent Incidents Log</h2>
-          {isLoading && <PageLoader />}
-          {isError && <ErrorState onRetry={() => refetchAll()} />}
-          {!isLoading && !isError && recent.length === 0 && (
-            <p className="text-xs text-muted-foreground">No reports recorded yet.</p>
-          )}
-          {!isLoading && !isError && recent.length > 0 && (
-            <div className="space-y-2.5">
-              {recent.map((r: any) => (
-                <div key={r._id || r.id} className="flex items-center justify-between p-3 rounded-lg border bg-muted/20 text-xs">
-                  <div>
-                    <span className="font-semibold text-foreground">{r.category || 'General Report'} · {r.id || r._id}</span>
-                    <span className="text-muted-foreground ml-2">({r.location || 'Campus'})</span>
-                  </div>
-                  <Badge variant="outline" className={`text-[10px] ${v1StatusTone(r.status)}`}>
-                    {r.status}
-                  </Badge>
+      <div className="rounded-2xl border border-border/80 bg-card p-5 space-y-4">
+        <h2 className="text-base font-semibold text-foreground">Recent Incidents Log</h2>
+        {isLoading && <PageLoader />}
+        {isError && <ErrorState onRetry={() => refetchAll()} />}
+        {!isLoading && !isError && recent.length === 0 && (
+          <p className="text-xs text-muted-foreground">No reports recorded yet.</p>
+        )}
+        {!isLoading && !isError && recent.length > 0 && (
+          <div className="space-y-2.5">
+            {recent.map((r: any) => (
+              <div key={r._id || r.id} className="flex items-center justify-between p-3 rounded-lg border bg-muted/20 text-xs">
+                <div>
+                  <span className="font-semibold text-foreground">{r.category || 'General Report'} · {r.id || r._id}</span>
+                  <span className="text-muted-foreground ml-2">({r.location || 'Campus'})</span>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
+                <Badge variant="outline" className={`text-[10px] ${v1StatusTone(r.status)}`}>
+                  {r.status}
+                </Badge>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
-        <div className="rounded-2xl border border-border/80 bg-card p-5 space-y-4">
-          <h2 className="text-base font-semibold text-foreground">Workforce Snapshot</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-xs">
-            <div className="rounded-lg border bg-muted/20 p-3">
-              <span className="text-muted-foreground font-medium">Registered Users</span>
-              <p className="text-xl font-bold text-foreground mt-0.5">{users.length}</p>
-            </div>
-            <div className="rounded-lg border bg-muted/20 p-3">
-              <span className="text-muted-foreground font-medium">Staff (Sup + Cln)</span>
-              <p className="text-xl font-bold text-foreground mt-0.5">{staffCount}</p>
-            </div>
-            <div className="rounded-lg border bg-muted/20 p-3">
-              <span className="text-muted-foreground font-medium">Cleaner Profiles</span>
-              <p className="text-xl font-bold text-foreground mt-0.5">{cleaners.length}</p>
-            </div>
+      <div className="rounded-2xl border border-border/80 bg-card p-5 space-y-4">
+        <h2 className="text-base font-semibold text-foreground">Workforce Snapshot</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-xs">
+          <div className="rounded-lg border bg-muted/20 p-3">
+            <span className="text-muted-foreground font-medium">Registered Users</span>
+            <p className="text-xl font-bold text-foreground mt-0.5">{users.length}</p>
+          </div>
+          <div className="rounded-lg border bg-muted/20 p-3">
+            <span className="text-muted-foreground font-medium">Staff (Sup + Cln)</span>
+            <p className="text-xl font-bold text-foreground mt-0.5">{staffCount}</p>
+          </div>
+          <div className="rounded-lg border bg-muted/20 p-3">
+            <span className="text-muted-foreground font-medium">Cleaner Profiles</span>
+            <p className="text-xl font-bold text-foreground mt-0.5">{cleaners.length}</p>
           </div>
         </div>
-      </main>
-    </div>
+      </div>
+    </main>
   );
 }

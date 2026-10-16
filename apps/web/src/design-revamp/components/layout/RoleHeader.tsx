@@ -1,5 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/design-revamp/hooks/useAuth';
+import { ThemeToggle } from '@/design-revamp/hooks/useTheme';
 import { Button } from '@/design-revamp/components/ui/button';
 import {
   ClipboardCheck,
@@ -125,6 +126,7 @@ export function RoleHeader({ role }: { role: RoleHeaderRole }) {
             {user?.name}
             {role === 'master' ? ' (Admin)' : ''}
           </span>
+          <ThemeToggle />
           <Button
             variant="ghost"
             size="sm"

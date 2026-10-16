@@ -9,6 +9,7 @@ import { ReportRow } from '@/design-revamp/components/composites/ReportRow';
 import { ErrorState } from '@/design-revamp/components/feedback/ErrorState';
 import { EmptyState } from '@/design-revamp/components/feedback/EmptyState';
 import { Skeleton } from '@/design-revamp/components/feedback/Skeletons';
+import { PaginationControls } from '@/design-revamp/components/composites/PaginationControls';
 import { cn } from '@/design-revamp/lib/utils';
 
 // Mirror the backend public-status buckets (reports.service.ts):
@@ -132,18 +133,28 @@ export function CleanerCard({ cleaner }: { cleaner: any }) {
   );
 }
 
-export function StatusBoard() {
+interface StatusBoardProps {
+  pageSize?: number;
+}
+
+export function StatusBoard({ pageSize = 3 }: StatusBoardProps = {}) {
   const { data: board, isLoading, isError, isFetching, refetch } = usePublicStatusBoard();
   const [searchParams] = useSearchParams();
   // Keep metric filtering local to the dashboard status board.
   const [activeMetric, setActiveMetric] = useState<MetricId>(() =>
     metricFromSearchParam(searchParams.get('metric')),
   );
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Stay in sync if the ?metric= param changes while the board is mounted.
   useEffect(() => {
     setActiveMetric(metricFromSearchParam(searchParams.get('metric')));
   }, [searchParams]);
+
+  // Reset page to 1 when switching metric tabs
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeMetric]);
 
   const summary = board?.summary || {
     total: 0,
@@ -171,9 +182,15 @@ export function StatusBoard() {
   const activeEntry = metrics.find((m) => m.id === activeMetric) || metrics[0];
 
   const filteredReports = filterReportsByMetric(reports, activeEntry.id);
+  const totalPages = Math.max(1, Math.ceil(filteredReports.length / pageSize));
+  const safePage = Math.max(1, Math.min(currentPage, totalPages));
+  const startIndex = (safePage - 1) * pageSize;
+  const paginatedReports = filteredReports.slice(startIndex, startIndex + pageSize);
 
   const busyCleaners = cleaners.filter((c: any) => c.status === 'Busy');
   const availableCleaners = cleaners.filter((c: any) => c.status !== 'Busy');
+  const busyDisplay = busyCleaners.slice(0, 6);
+  const availableDisplay = availableCleaners.slice(0, 6);
 
   const updatedAt = board?.generatedAt
     ? new Date(board.generatedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
@@ -279,9 +296,14 @@ export function StatusBoard() {
                   />
                 ) : (
                   <div className="space-y-3">
-                    {busyCleaners.map((cleaner: any) => (
+                    {busyDisplay.map((cleaner: any) => (
                       <CleanerCard key={cleaner._id || cleaner.id} cleaner={cleaner} />
                     ))}
+                    {busyCleaners.length > 6 && (
+                      <p className="text-center text-xs text-muted-foreground pt-1">
+                        Showing first 6 of {busyCleaners.length} busy cleaners
+                      </p>
+                    )}
                   </div>
                 )}
               </div>
@@ -304,9 +326,14 @@ export function StatusBoard() {
                   />
                 ) : (
                   <div className="space-y-3">
-                    {availableCleaners.map((cleaner: any) => (
+                    {availableDisplay.map((cleaner: any) => (
                       <CleanerCard key={cleaner._id || cleaner.id} cleaner={cleaner} />
                     ))}
+                    {availableCleaners.length > 6 && (
+                      <p className="text-center text-xs text-muted-foreground pt-1">
+                        Showing first 6 of {availableCleaners.length} available cleaners
+                      </p>
+                    )}
                   </div>
                 )}
               </div>
@@ -334,13 +361,21 @@ export function StatusBoard() {
               />
             ) : (
               <div className="space-y-3">
-                {filteredReports.map((report: any) => (
+                {paginatedReports.map((report: any) => (
                   <ReportRow
                     key={report._id || report.id}
                     report={report}
                     showAssignee
                   />
                 ))}
+                <PaginationControls
+                  currentPage={safePage}
+                  totalPages={totalPages}
+                  totalItems={filteredReports.length}
+                  pageSize={pageSize}
+                  onPageChange={setCurrentPage}
+                  itemLabel="reports"
+                />
               </div>
             )}
           </div>

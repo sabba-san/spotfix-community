@@ -3,7 +3,7 @@
 
 const runtimeConfig = window.__APP_CONFIG__ || {};
 const API_V1_BASE = String(
-  runtimeConfig.API_BASE_URL || import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001/api/v1'
+  runtimeConfig.API_BASE_URL || import.meta.env.VITE_API_BASE_URL || '/api/v1'
 ).replace(/\/+$/, '');
 const API_V2_BASE = API_V1_BASE.replace(/\/api\/v1$/, '/api/v2');
 

@@ -3,6 +3,9 @@ import { lazy, Suspense } from 'react';
 import { Providers } from './providers';
 import { ProtectedRoute, GuestRoute, RoleRoute } from '@/design-revamp/components/layout/RouteGuards';
 import { PublicLayout } from '@/design-revamp/components/layout/PublicLayout';
+import { SupervisorLayout } from '@/design-revamp/components/layout/SupervisorLayout';
+import { AdminLayout } from '@/design-revamp/components/layout/AdminLayout';
+import { CleanerLayout } from '@/design-revamp/components/layout/CleanerLayout';
 
 const LoginPage = lazy(() => import('./views/auth/LoginPage'));
 const RegisterPage = lazy(() => import('./views/auth/RegisterPage'));
@@ -112,7 +115,9 @@ const router = createBrowserRouter([
     path: '/cleaner',
     element: (
       <RoleRoute roles={['cleaner']}>
-        <CleanerTasksPage />
+        <CleanerLayout>
+          <CleanerTasksPage />
+        </CleanerLayout>
       </RoleRoute>
     ),
   },
@@ -120,7 +125,9 @@ const router = createBrowserRouter([
     path: '/cleaner/tasks',
     element: (
       <RoleRoute roles={['cleaner']}>
-        <CleanerTasksPage />
+        <CleanerLayout>
+          <CleanerTasksPage />
+        </CleanerLayout>
       </RoleRoute>
     ),
   },
@@ -128,7 +135,9 @@ const router = createBrowserRouter([
     path: '/cleaner/account',
     element: (
       <RoleRoute roles={['cleaner']}>
-        <CleanerAccountPage />
+        <CleanerLayout>
+          <CleanerAccountPage />
+        </CleanerLayout>
       </RoleRoute>
     ),
   },
@@ -136,7 +145,9 @@ const router = createBrowserRouter([
     path: '/supervisor',
     element: (
       <RoleRoute roles={['supervisor']}>
-        <SupervisorTaskBoardPage />
+        <SupervisorLayout>
+          <SupervisorTaskBoardPage />
+        </SupervisorLayout>
       </RoleRoute>
     ),
   },
@@ -144,7 +155,9 @@ const router = createBrowserRouter([
     path: '/supervisor/tasks',
     element: (
       <RoleRoute roles={['supervisor']}>
-        <SupervisorTaskBoardPage />
+        <SupervisorLayout>
+          <SupervisorTaskBoardPage />
+        </SupervisorLayout>
       </RoleRoute>
     ),
   },
@@ -152,7 +165,9 @@ const router = createBrowserRouter([
     path: '/supervisor/dispatch',
     element: (
       <RoleRoute roles={['supervisor']}>
-        <SupervisorDispatchPage />
+        <SupervisorLayout>
+          <SupervisorDispatchPage />
+        </SupervisorLayout>
       </RoleRoute>
     ),
   },
@@ -160,7 +175,9 @@ const router = createBrowserRouter([
     path: '/supervisor/reviews',
     element: (
       <RoleRoute roles={['supervisor']}>
-        <SupervisorReviewsPage />
+        <SupervisorLayout>
+          <SupervisorReviewsPage />
+        </SupervisorLayout>
       </RoleRoute>
     ),
   },
@@ -168,7 +185,9 @@ const router = createBrowserRouter([
     path: '/supervisor/workforce',
     element: (
       <RoleRoute roles={['supervisor']}>
-        <SupervisorWorkforcePage />
+        <SupervisorLayout>
+          <SupervisorWorkforcePage />
+        </SupervisorLayout>
       </RoleRoute>
     ),
   },
@@ -176,7 +195,9 @@ const router = createBrowserRouter([
     path: '/supervisor/onboard',
     element: (
       <RoleRoute roles={['supervisor']}>
-        <SupervisorOnboardPage />
+        <SupervisorLayout>
+          <SupervisorOnboardPage />
+        </SupervisorLayout>
       </RoleRoute>
     ),
   },
@@ -184,7 +205,9 @@ const router = createBrowserRouter([
     path: '/supervisor/account',
     element: (
       <RoleRoute roles={['supervisor']}>
-        <SupervisorAccountPage />
+        <SupervisorLayout>
+          <SupervisorAccountPage />
+        </SupervisorLayout>
       </RoleRoute>
     ),
   },
@@ -192,7 +215,9 @@ const router = createBrowserRouter([
     path: '/admin',
     element: (
       <RoleRoute roles={['master']}>
-        <AdminOverviewPage />
+        <AdminLayout>
+          <AdminOverviewPage />
+        </AdminLayout>
       </RoleRoute>
     ),
   },
@@ -200,7 +225,9 @@ const router = createBrowserRouter([
     path: '/admin/overview',
     element: (
       <RoleRoute roles={['master']}>
-        <AdminOverviewPage />
+        <AdminLayout>
+          <AdminOverviewPage />
+        </AdminLayout>
       </RoleRoute>
     ),
   },
@@ -208,7 +235,9 @@ const router = createBrowserRouter([
     path: '/admin/users',
     element: (
       <RoleRoute roles={['master']}>
-        <AdminUsersPage />
+        <AdminLayout>
+          <AdminUsersPage />
+        </AdminLayout>
       </RoleRoute>
     ),
   },
@@ -216,7 +245,9 @@ const router = createBrowserRouter([
     path: '/admin/onboard',
     element: (
       <RoleRoute roles={['master']}>
-        <AdminOnboardPage />
+        <AdminLayout>
+          <AdminOnboardPage />
+        </AdminLayout>
       </RoleRoute>
     ),
   },
@@ -224,7 +255,9 @@ const router = createBrowserRouter([
     path: '/admin/control',
     element: (
       <RoleRoute roles={['master']}>
-        <AdminControlPage />
+        <AdminLayout>
+          <AdminControlPage />
+        </AdminLayout>
       </RoleRoute>
     ),
   },
@@ -232,7 +265,9 @@ const router = createBrowserRouter([
     path: '/admin/account',
     element: (
       <RoleRoute roles={['master']}>
-        <AdminAccountPage />
+        <AdminLayout>
+          <AdminAccountPage />
+        </AdminLayout>
       </RoleRoute>
     ),
   },

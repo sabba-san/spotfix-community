@@ -73,135 +73,88 @@ export default function AdminControlPage() {
     }
   }
 
-  const navLinks = [
-    { to: '/dashboard', label: 'Dashboard', icon: Home },
-    { to: '/admin/overview', label: 'Overview', icon: LayoutDashboard },
-    { to: '/admin/users', label: 'Users', icon: Users2 },
-    { to: '/admin/onboard', label: 'Onboarding', icon: UserPlus },
-    { to: '/admin/control', label: 'Control', icon: KeyRound },
-    { to: '/admin/account', label: 'Account', icon: CircleUserRound },
-  ];
-
   return (
-    <div className="min-h-[100dvh] bg-background text-foreground flex flex-col">
-      <header className="sticky top-0 z-40 border-b border-border/80 bg-background/95 backdrop-blur-md">
-        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-600 font-bold">
-              <ShieldCheck className="h-4.5 w-4.5" />
-            </div>
-            <div>
-              <span className="text-sm font-bold tracking-tight">SpotFix Control Room</span>
-              <span className="hidden sm:inline text-xs text-muted-foreground ml-2">Master Control</span>
-            </div>
+    <main className="flex-1 mx-auto w-full max-w-4xl px-4 py-6 sm:px-6 space-y-6">
+      <div>
+        <h1 className="text-xl font-bold tracking-tight">Master Control</h1>
+        <p className="mt-1 text-xs text-muted-foreground">Role catalog, master account creation, and directory tools for the control room.</p>
+      </div>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {ROLE_CARDS.map((r) => (
+          <div key={r.role} className="rounded-xl border bg-card p-3">
+            <Badge variant="outline" className={`text-[11px] ${r.tone}`}>{r.role}</Badge>
+            <p className="mt-1.5 text-[11px] text-muted-foreground">{r.desc}</p>
           </div>
-          <nav className="flex max-w-[55vw] items-center gap-1 overflow-x-auto" aria-label="Admin navigation">
-            {navLinks.map((item) => {
-              const isActive = location.pathname === item.to;
-              return (
-                <Link key={item.to} to={item.to}
-                  className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors active:scale-[0.98] ${
-                    isActive ? 'bg-primary/10 text-primary font-semibold' : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                  }`}
-                >
-                  <item.icon className="h-4 w-4" />
-                  {item.label}
-                </Link>
-              );
-            })}
-          </nav>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground font-medium hidden sm:inline">{user?.name} (Admin)</span>
-            <Button variant="ghost" size="sm" onClick={logout} className="h-8 gap-1.5 px-2 text-xs text-muted-foreground hover:text-destructive active:scale-[0.98]">
-              <LogOut className="h-3.5 w-3.5" />
-              <span>Sign out</span>
-            </Button>
-          </div>
-        </div>
-      </header>
+        ))}
+      </div>
 
-      <main className="flex-1 mx-auto w-full max-w-4xl px-4 py-6 sm:px-6 space-y-6">
-        <div>
-          <h1 className="text-xl font-bold tracking-tight">Master Control</h1>
-          <p className="mt-1 text-xs text-muted-foreground">Role catalog, master account creation, and directory tools for the control room.</p>
-        </div>
-
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          {ROLE_CARDS.map((r) => (
-            <div key={r.role} className="rounded-xl border bg-card p-3">
-              <Badge variant="outline" className={`text-[11px] ${r.tone}`}>{r.role}</Badge>
-              <p className="mt-1.5 text-[11px] text-muted-foreground">{r.desc}</p>
+      <Card className="border border-border/80">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base"><KeyRound className="h-4 w-4 text-indigo-600" />Create Master Account</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {masterMsg && (
+            <div className={`mb-3 flex items-center gap-2 rounded-lg border p-2.5 text-xs ${masterMsg.ok ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700' : 'border-destructive/20 bg-destructive/5 text-destructive'}`}>
+              {masterMsg.ok ? <CheckCircle2 className="h-3.5 w-3.5" /> : <AlertCircle className="h-3.5 w-3.5" />}
+              {masterMsg.text}
             </div>
-          ))}
-        </div>
-
-        <Card className="border border-border/80">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base"><KeyRound className="h-4 w-4 text-indigo-600" />Create Master Account</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {masterMsg && (
-              <div className={`mb-3 flex items-center gap-2 rounded-lg border p-2.5 text-xs ${masterMsg.ok ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700' : 'border-destructive/20 bg-destructive/5 text-destructive'}`}>
-                {masterMsg.ok ? <CheckCircle2 className="h-3.5 w-3.5" /> : <AlertCircle className="h-3.5 w-3.5" />}
-                {masterMsg.text}
-              </div>
-            )}
-            <form onSubmit={handleCreateMaster} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <input value={username} onChange={(e) => setUsername(e.target.value)} placeholder="Username" required aria-label="Master username"
-                className="h-10 rounded-lg border border-input bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary" />
-              <input value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="Display name" required aria-label="Master display name"
-                className="h-10 rounded-lg border border-input bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary" />
-              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password (min 6)" required minLength={6} aria-label="Master password"
-                className="h-10 rounded-lg border border-input bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary" />
-              <input type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="Confirm password" required aria-label="Confirm master password"
-                className="h-10 rounded-lg border border-input bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary" />
-              <Button type="submit" disabled={masterBusy || password !== confirm} className="sm:col-span-2 min-h-11">
-                {masterBusy ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <KeyRound className="mr-1.5 h-4 w-4" />}
-                Create Master Account
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-
-        <Card className="border border-border/80">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base"><Ban className="h-4 w-4 text-muted-foreground" />Report Submission</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-xs text-muted-foreground">
-              Master accounts cannot submit public reports — the backend rejects them to keep
-              incident data reporter-owned. To file an issue, sign in with a reporter, cleaner,
-              or supervisor account and use <span className="font-medium">Submit Issue</span> from
-              the dashboard.
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="border border-border/80">
-          <CardHeader className="flex flex-row items-center justify-between pb-3">
-            <CardTitle className="text-base">Directory Snapshot</CardTitle>
-            <Button size="sm" variant="outline" onClick={loadUsers} disabled={usersLoading}>
-              {usersLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Load users'}
+          )}
+          <form onSubmit={handleCreateMaster} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <input value={username} onChange={(e) => setUsername(e.target.value)} placeholder="Username" required aria-label="Master username"
+              className="h-10 rounded-lg border border-input bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary" />
+            <input value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="Display name" required aria-label="Master display name"
+              className="h-10 rounded-lg border border-input bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary" />
+            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password (min 6)" required minLength={6} aria-label="Master password"
+              className="h-10 rounded-lg border border-input bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary" />
+            <input type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="Confirm password" required aria-label="Confirm master password"
+              className="h-10 rounded-lg border border-input bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary" />
+            <Button type="submit" disabled={masterBusy || password !== confirm} className="sm:col-span-2 min-h-11">
+              {masterBusy ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <KeyRound className="mr-1.5 h-4 w-4" />}
+              Create Master Account
             </Button>
-          </CardHeader>
-          <CardContent>
-            {usersError && <ErrorState onRetry={loadUsers} />}
-            {!usersLoading && !usersError && users.length === 0 && (
-              <p className="text-xs text-muted-foreground">No users loaded yet.</p>
-            )}
-            {users.length > 0 && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {users.slice(0, 12).map((u) => (
-                  <div key={u._id} className="flex items-center justify-between rounded-lg border px-3 py-2 text-xs">
-                    <span className="font-medium">{u.name}</span>
-                    <Badge variant="outline" className="text-[10px] capitalize">{u.role}</Badge>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </main>
-    </div>
+          </form>
+        </CardContent>
+      </Card>
+
+      <Card className="border border-border/80">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base"><Ban className="h-4 w-4 text-muted-foreground" />Report Submission</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-xs text-muted-foreground">
+            Master accounts cannot submit public reports — the backend rejects them to keep
+            incident data reporter-owned. To file an issue, sign in with a reporter, cleaner,
+            or supervisor account and use <span className="font-medium">Submit Issue</span> from
+            the dashboard.
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card className="border border-border/80">
+        <CardHeader className="flex flex-row items-center justify-between pb-3">
+          <CardTitle className="text-base">Directory Snapshot</CardTitle>
+          <Button size="sm" variant="outline" onClick={loadUsers} disabled={usersLoading}>
+            {usersLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Load users'}
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {usersError && <ErrorState onRetry={loadUsers} />}
+          {!usersLoading && !usersError && users.length === 0 && (
+            <p className="text-xs text-muted-foreground">No users loaded yet.</p>
+          )}
+          {users.length > 0 && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {users.slice(0, 12).map((u) => (
+                <div key={u._id} className="flex items-center justify-between rounded-lg border px-3 py-2 text-xs">
+                  <span className="font-medium">{u.name}</span>
+                  <Badge variant="outline" className="text-[10px] capitalize">{u.role}</Badge>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </main>
   );
 }

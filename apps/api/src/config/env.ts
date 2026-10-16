@@ -36,8 +36,8 @@ const EnvSchema = z.object({
 
     LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
 
-    // P3 — object storage (MinIO locally, OCI Object Storage / S3 in prod).
-    STORAGE_ENDPOINT: z.string().min(1).default('http://127.0.0.1:9000'),
+    // P3 — object storage (LocalStack S3 on 4566 locally, OCI Object Storage / S3 in prod).
+    STORAGE_ENDPOINT: z.string().min(1).default('http://127.0.0.1:4566'),
     STORAGE_REGION: z.string().min(1).default('us-east-1'),
     STORAGE_BUCKET: z.string().min(1).default('spotfix-photos'),
     STORAGE_ACCESS_KEY: z.string().min(1).default('spotfix'),

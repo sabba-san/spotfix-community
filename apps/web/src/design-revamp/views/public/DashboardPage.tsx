@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { MapPin, FileText, RefreshCw, AlertCircle, CheckCircle2, Clock, Users, ArrowRight, Send, ClipboardList, Inbox, ClipboardCheck, ShieldCheck, UserPlus } from 'lucide-react';
 import { Button } from '@/design-revamp/components/ui/button';
 import { useAuth } from '@/design-revamp/hooks/useAuth';
@@ -6,6 +6,7 @@ import { useMyReports, usePublicStatusBoard } from '@/design-revamp/hooks/useRep
 import { PageLoader } from '@/design-revamp/components/feedback/PageLoader';
 import { ReportRow } from '@/design-revamp/components/composites/ReportRow';
 import { filterReportsByMetric, CleanerCard, type MetricId } from '@/design-revamp/components/composites/StatusBoard';
+import { PaginationControls } from '@/design-revamp/components/composites/PaginationControls';
 import { EmptyState } from '@/design-revamp/components/feedback/EmptyState';
 import { ErrorState } from '@/design-revamp/components/feedback/ErrorState';
 import { Link } from 'react-router-dom';
@@ -40,6 +41,12 @@ export default function DashboardPage() {
 
   // Active filter for the inline community status section
   const [statusFilter, setStatusFilter] = useState<MetricId>('total');
+  const [statusPage, setStatusPage] = useState(1);
+  const STATUS_PAGE_SIZE = 3;
+
+  useEffect(() => {
+    setStatusPage(1);
+  }, [statusFilter]);
 
   // Staff workspace shortcuts — supervisors land on /dashboard after login,
   // so surface their operational pages here instead of hiding them in
@@ -199,9 +206,17 @@ export default function DashboardPage() {
                   <EmptyState title="Nothing to show yet" description="All cleaners are currently available." className="p-6 bg-muted/20" />
                 ) : (
                   <div className="space-y-3">
-                    {cleaners.filter((c: any) => c.status === 'Busy').map((cleaner: any) => (
-                      <CleanerCard key={cleaner._id || cleaner.id} cleaner={cleaner} />
-                    ))}
+                    {cleaners
+                      .filter((c: any) => c.status === 'Busy')
+                      .slice(0, 6)
+                      .map((cleaner: any) => (
+                        <CleanerCard key={cleaner._id || cleaner.id} cleaner={cleaner} />
+                      ))}
+                    {cleaners.filter((c: any) => c.status === 'Busy').length > 6 && (
+                      <p className="text-center text-xs text-muted-foreground pt-1">
+                        Showing first 6 of {cleaners.filter((c: any) => c.status === 'Busy').length} busy cleaners
+                      </p>
+                    )}
                   </div>
                 )}
               </div>
@@ -220,9 +235,17 @@ export default function DashboardPage() {
                   <EmptyState title="Nothing to show yet" description="All cleaners are currently busy." className="p-6 bg-muted/20" />
                 ) : (
                   <div className="space-y-3">
-                    {cleaners.filter((c: any) => c.status !== 'Busy').map((cleaner: any) => (
-                      <CleanerCard key={cleaner._id || cleaner.id} cleaner={cleaner} />
-                    ))}
+                    {cleaners
+                      .filter((c: any) => c.status !== 'Busy')
+                      .slice(0, 6)
+                      .map((cleaner: any) => (
+                        <CleanerCard key={cleaner._id || cleaner.id} cleaner={cleaner} />
+                      ))}
+                    {cleaners.filter((c: any) => c.status !== 'Busy').length > 6 && (
+                      <p className="text-center text-xs text-muted-foreground pt-1">
+                        Showing first 6 of {cleaners.filter((c: any) => c.status !== 'Busy').length} available cleaners
+                      </p>
+                    )}
                   </div>
                 )}
               </div>
@@ -241,15 +264,28 @@ export default function DashboardPage() {
                   />
                 );
               }
+              const totalPages = Math.max(1, Math.ceil(filtered.length / STATUS_PAGE_SIZE));
+              const safePage = Math.max(1, Math.min(statusPage, totalPages));
+              const startIndex = (safePage - 1) * STATUS_PAGE_SIZE;
+              const paginated = filtered.slice(startIndex, startIndex + STATUS_PAGE_SIZE);
+
               return (
                 <div className="space-y-3">
-                  {filtered.slice(0, 10).map((report: any) => (
+                  {paginated.map((report: any) => (
                     <ReportRow
                       key={report._id || report.id}
                       report={report}
                       showAssignee
                     />
                   ))}
+                  <PaginationControls
+                    currentPage={safePage}
+                    totalPages={totalPages}
+                    totalItems={filtered.length}
+                    pageSize={STATUS_PAGE_SIZE}
+                    onPageChange={setStatusPage}
+                    itemLabel="reports"
+                  />
                 </div>
               );
             })()}
@@ -293,7 +329,7 @@ export default function DashboardPage() {
         )}
         {!isLoadingMyReports && displayReports.length > 0 && (
           <div className="space-y-3">
-            {displayReports.map((report) => (
+            {displayReports.map((report: any) => (
               <ReportRow
                 key={report._id || report.id}
                 report={report}

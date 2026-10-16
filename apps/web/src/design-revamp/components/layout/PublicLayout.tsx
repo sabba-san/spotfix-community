@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
 import { Outlet, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '@/design-revamp/hooks/useAuth';
+import { ThemeToggle } from '@/design-revamp/hooks/useTheme';
 import { Button } from '@/design-revamp/components/ui/button';
 import {
   MapPin,
@@ -82,6 +83,7 @@ export function PublicLayout({ children }: { children?: ReactNode }) {
                 <span className="hidden text-xs text-muted-foreground sm:inline font-medium">
                   {user.name.split(' ')[0]} ({user.role})
                 </span>
+                <ThemeToggle />
                 <Button
                   variant="ghost"
                   size="sm"

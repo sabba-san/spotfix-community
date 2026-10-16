@@ -11,9 +11,10 @@ import { cn } from '@/design-revamp/lib/utils';
 
 type AuthTab = 'staff-login' | 'cleaner-login' | 'reporter-login' | 'register' | 'master-login';
 
+const runtimeConfig = (typeof window !== 'undefined' ? (window as any).__APP_CONFIG__ : null) || {};
 const GOOGLE_CLIENT_ID = String(
-  (window.__APP_CONFIG__?.GOOGLE_CLIENT_ID as string) ||
-  import.meta.env.VITE_GOOGLE_CLIENT_ID ||
+  runtimeConfig.GOOGLE_CLIENT_ID ||
+  (import.meta as any).env?.VITE_GOOGLE_CLIENT_ID ||
   '',
 ).trim();
 
@@ -202,11 +203,11 @@ export default function LoginPage() {
   );
 
   return (
-    <div className="grid min-h-[100dvh] lg:grid-cols-[1.3fr_0.9fr] xl:grid-cols-[1.4fr_1fr]">
-      {/* Left Column: Public Status Board Dashboard (Circled in green) */}
-      <div className="flex flex-col justify-between bg-muted/20 p-6 sm:p-8 lg:p-10 border-b lg:border-b-0 lg:border-r border-border/60 overflow-y-auto">
-        <div className="space-y-6 max-w-4xl w-full mx-auto">
-          {/* SpotFix Brand Header */}
+    <div className="grid min-h-[100dvh] lg:grid-cols-[0.95fr_1.35fr] xl:grid-cols-[1fr_1.45fr]">
+      {/* Left Column: Sign-In / Login Card & Primary Brand Header */}
+      <div className="flex flex-col justify-between bg-muted/30 p-6 sm:p-8 lg:p-10 border-b lg:border-b-0 lg:border-r border-border/60 lg:sticky lg:top-0 lg:h-[100dvh] lg:overflow-y-auto">
+        <div className="space-y-6 max-w-md w-full mx-auto">
+          {/* Primary SpotFix Brand Header (Top-left of desktop & mobile) */}
           <div className="flex items-center justify-between">
             <Link to="/" className="flex items-center gap-2.5">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl gradient-bg shadow-sm">
@@ -221,24 +222,13 @@ export default function LoginPage() {
             </Link>
           </div>
 
-          {/* Live 6-Metric Public Status Board Dashboard */}
-          <StatusBoard />
-        </div>
-
-        <footer className="mt-8 pt-4 border-t border-border/40 text-xs text-muted-foreground flex flex-col sm:flex-row items-center justify-between gap-2">
-          <span>&copy; 2026 SpotFix Community</span>
-          <span>Public Infrastructure Transparency</span>
-        </footer>
-      </div>
-
-      <div className="flex items-center justify-center bg-muted/30 p-6">
-        <Card className="w-full max-w-md border-0 shadow-xl">
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-3xl font-bold tracking-tight">Welcome</CardTitle>
-            <p className="text-sm text-muted-foreground">
-              Sign in to your SpotFix account
-            </p>
-          </CardHeader>
+          <Card className="w-full border-0 shadow-xl">
+            <CardHeader className="space-y-1">
+              <CardTitle className="text-3xl font-bold tracking-tight">Welcome</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Sign in to your SpotFix account
+              </p>
+            </CardHeader>
           <CardContent className="space-y-6">
             <div className="grid grid-cols-2 gap-1 rounded-xl bg-muted p-1">
               {tabs.map((tab) => (
@@ -529,6 +519,24 @@ export default function LoginPage() {
           </CardContent>
         </Card>
       </div>
+
+      <footer className="mt-8 pt-4 border-t border-border/30 text-xs text-muted-foreground text-center sm:text-left">
+        <span>&copy; 2026 SpotFix Community</span>
+      </footer>
     </div>
-  );
+
+    {/* Right Column: Public Status Board Dashboard */}
+    <div className="flex flex-col justify-between bg-muted/15 p-6 sm:p-8 lg:p-10 overflow-y-auto min-h-[100dvh]">
+      <div className="space-y-6 max-w-4xl w-full mx-auto">
+        {/* Starts directly with the Public Status Board heading and metrics (no duplicate brand header) */}
+        <StatusBoard />
+      </div>
+
+      <footer className="mt-8 pt-4 border-t border-border/40 text-xs text-muted-foreground flex flex-col sm:flex-row items-center justify-between gap-2">
+        <span>Public Infrastructure Transparency</span>
+        <span>Real-time Community Status</span>
+      </footer>
+    </div>
+  </div>
+);
 }

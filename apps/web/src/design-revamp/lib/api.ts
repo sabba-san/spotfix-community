@@ -1,6 +1,6 @@
 const runtimeConfig = window.__APP_CONFIG__ || {};
 const API_BASE_URL = String(
-  runtimeConfig.API_BASE_URL || import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001/api/v1',
+  runtimeConfig.API_BASE_URL || import.meta.env.VITE_API_BASE_URL || '/api/v1',
 ).replace(/\/+$/, '');
 const TENANT_SLUG = String(
   runtimeConfig.TENANT_SLUG || import.meta.env.VITE_TENANT_SLUG || 'example-campus',

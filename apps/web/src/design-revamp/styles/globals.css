@@ -11,19 +11,54 @@
   --card-foreground: #0F172A;
   --popover: #FFFFFF;
   --popover-foreground: #0F172A;
-  --primary: #0052FF;
+  --primary: #2563EB;
   --primary-foreground: #FFFFFF;
   --secondary: #F1F5F9;
   --secondary-foreground: #0F172A;
   --muted: #F1F5F9;
   --muted-foreground: #64748B;
-  --accent: #0052FF;
+  --accent: #2563EB;
   --accent-foreground: #FFFFFF;
   --destructive: #DC2626;
   --destructive-foreground: #FFFFFF;
   --border: #E2E8F0;
   --input: #E2E8F0;
-  --ring: #0052FF;
+  --ring: #2563EB;
+
+  /* Status colors (light) */
+  --status-reported: #BA1A1A;
+  --status-reported-foreground: #FFFFFF;
+  --status-assigned: #1D4ED8;
+  --status-assigned-foreground: #FFFFFF;
+  --status-in-progress: #A33200;
+  --status-in-progress-foreground: #FFFFFF;
+  --status-resolved: #006E2D;
+  --status-resolved-foreground: #FFFFFF;
+  --status-urgent: #5D2B89;
+  --status-urgent-foreground: #FFFFFF;
+
+  /* Role colors (light) */
+  --role-public: #2563EB;
+  --role-public-foreground: #FFFFFF;
+  --role-supervisor: #006A6A;
+  --role-supervisor-foreground: #FFFFFF;
+  --role-cleaner: #8E3100;
+  --role-cleaner-foreground: #FFFFFF;
+  --role-admin: #5D2B89;
+  --role-admin-foreground: #FFFFFF;
+
+  /* Neutral scale */
+  --neutral-50: #F8FAFC;
+  --neutral-100: #F1F5F9;
+  --neutral-200: #E2E8F0;
+  --neutral-300: #CBD5E1;
+  --neutral-400: #94A3B8;
+  --neutral-500: #64748B;
+  --neutral-600: #475569;
+  --neutral-700: #334155;
+  --neutral-800: #1E293B;
+  --neutral-900: #0F172A;
+  --neutral-950: #020617;
 }
 
 .dark {
@@ -33,19 +68,54 @@
   --card-foreground: #F8FAFC;
   --popover: #1E293B;
   --popover-foreground: #F8FAFC;
-  --primary: #0052FF;
+  --primary: #3B82F6;
   --primary-foreground: #FFFFFF;
   --secondary: #334155;
   --secondary-foreground: #F8FAFC;
   --muted: #334155;
   --muted-foreground: #94A3B8;
-  --accent: #4D7CFF;
+  --accent: #3B82F6;
   --accent-foreground: #FFFFFF;
   --destructive: #EF4444;
   --destructive-foreground: #FFFFFF;
   --border: #334155;
   --input: #334155;
-  --ring: #4D7CFF;
+  --ring: #3B82F6;
+
+  /* Status colors (dark) */
+  --status-reported: #F87171;
+  --status-reported-foreground: #000000;
+  --status-assigned: #60A5FA;
+  --status-assigned-foreground: #000000;
+  --status-in-progress: #FB923C;
+  --status-in-progress-foreground: #000000;
+  --status-resolved: #4ADE80;
+  --status-resolved-foreground: #000000;
+  --status-urgent: #C084FC;
+  --status-urgent-foreground: #000000;
+
+  /* Role colors (dark) */
+  --role-public: #60A5FA;
+  --role-public-foreground: #000000;
+  --role-supervisor: #5EEAD4;
+  --role-supervisor-foreground: #000000;
+  --role-cleaner: #FB923C;
+  --role-cleaner-foreground: #000000;
+  --role-admin: #C084FC;
+  --role-admin-foreground: #000000;
+
+  /* Neutral scale (dark mirrors light) */
+  --neutral-50: #F8FAFC;
+  --neutral-100: #F1F5F9;
+  --neutral-200: #E2E8F0;
+  --neutral-300: #CBD5E1;
+  --neutral-400: #94A3B8;
+  --neutral-500: #64748B;
+  --neutral-600: #475569;
+  --neutral-700: #334155;
+  --neutral-800: #1E293B;
+  --neutral-900: #0F172A;
+  --neutral-950: #020617;
 }
 
 @theme inline {
@@ -74,6 +144,28 @@
   --color-ring: var(--ring);
   --font-sans: "Inter", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  /* Status color tokens */
+  --color-status-reported: var(--status-reported);
+  --color-status-reported-foreground: var(--status-reported-foreground);
+  --color-status-assigned: var(--status-assigned);
+  --color-status-assigned-foreground: var(--status-assigned-foreground);
+  --color-status-in-progress: var(--status-in-progress);
+  --color-status-in-progress-foreground: var(--status-in-progress-foreground);
+  --color-status-resolved: var(--status-resolved);
+  --color-status-resolved-foreground: var(--status-resolved-foreground);
+  --color-status-urgent: var(--status-urgent);
+  --color-status-urgent-foreground: var(--status-urgent-foreground);
+
+  /* Role color tokens */
+  --color-role-public: var(--role-public);
+  --color-role-public-foreground: var(--role-public-foreground);
+  --color-role-supervisor: var(--role-supervisor);
+  --color-role-supervisor-foreground: var(--role-supervisor-foreground);
+  --color-role-cleaner: var(--role-cleaner);
+  --color-role-cleaner-foreground: var(--role-cleaner-foreground);
+  --color-role-admin: var(--role-admin);
+  --color-role-admin-foreground: var(--role-admin-foreground);
 }
 
 @layer base {
@@ -87,26 +179,26 @@
 
 @layer utilities {
   .gradient-text {
-    background: linear-gradient(to right, #0052FF, #4D7CFF);
+    background: linear-gradient(to right, #2563EB, #3B82F6);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
   }
 
   .gradient-bg {
-    background: linear-gradient(to right, #0052FF, #4D7CFF);
+    background: linear-gradient(to right, #2563EB, #3B82F6);
   }
 
   .gradient-bg-diagonal {
-    background: linear-gradient(135deg, #0052FF, #4D7CFF);
+    background: linear-gradient(135deg, #2563EB, #3B82F6);
   }
 
   .shadow-accent {
-    box-shadow: 0 4px 14px rgba(0, 82, 255, 0.25);
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.25);
   }
 
   .shadow-accent-lg {
-    box-shadow: 0 8px 24px rgba(0, 82, 255, 0.35);
+    box-shadow: 0 8px 24px rgba(37, 99, 235, 0.35);
   }
 
   .dot-pattern {
@@ -117,5 +209,36 @@
   @keyframes float {
     0%, 100% { transform: translateY(0); }
     50% { transform: translateY(-10px); }
+  }
+
+  /* Status badge utilities */
+  .badge-status-reported {
+    @apply bg-status-reported text-status-reported-foreground;
+  }
+  .badge-status-assigned {
+    @apply bg-status-assigned text-status-assigned-foreground;
+  }
+  .badge-status-in-progress {
+    @apply bg-status-in-progress text-status-in-progress-foreground;
+  }
+  .badge-status-resolved {
+    @apply bg-status-resolved text-status-resolved-foreground;
+  }
+  .badge-status-urgent {
+    @apply bg-status-urgent text-status-urgent-foreground;
+  }
+
+  /* Role badge utilities */
+  .badge-role-public {
+    @apply bg-role-public text-role-public-foreground;
+  }
+  .badge-role-supervisor {
+    @apply bg-role-supervisor text-role-supervisor-foreground;
+  }
+  .badge-role-cleaner {
+    @apply bg-role-cleaner text-role-cleaner-foreground;
+  }
+  .badge-role-admin {
+    @apply bg-role-admin text-role-admin-foreground;
   }
 }

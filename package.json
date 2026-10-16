@@ -15,6 +15,9 @@
     "contract:typecheck": "npm --prefix packages/api-contract run typecheck",
     "android:test": "cd apps/android && ./gradlew testDebugUnitTest",
     "check:public": "./scripts/check-public-tree.sh",
-    "check": "npm run check:public && npm run api:typecheck && npm run api:test && npm run web:build && npm run contract:typecheck"
+    "check": "npm run check:public && npm run api:typecheck && npm run api:test && npm run web:build && npm run contract:typecheck",
+    "docker:up": "docker compose -f infra/docker/docker-compose.local-online.yml up --build -d",
+    "docker:down": "docker compose -f infra/docker/docker-compose.local-online.yml down",
+    "docker:logs": "docker compose -f infra/docker/docker-compose.local-online.yml logs -f"
   }
 }

@@ -19,8 +19,9 @@
     "bootstrap": "tsx scripts/bootstrap.ts",
     "bootstrap:promote-admin": "tsx scripts/promote-admin.ts",
     "seed:geo": "tsx scripts/seed-geo.ts",
+    "seed:reports": "tsx scripts/seed-reports.ts",
     "migrate:mongo": "tsx scripts/migrate-mongo-to-postgres.ts",
-    "docker:up": "docker compose up --build api",
+    "docker:up": "docker compose up --build -d",
     "docker:dev": "docker compose --profile dev up --build api-dev",
     "docker:down": "docker compose down"
   },

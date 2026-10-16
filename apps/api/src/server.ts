@@ -1,3 +1,8 @@
+// Prevent unhandled EBADF crashes on Node 26 when running in background/nohup/daemon
+process.stdin.on('error', (err) => {
+    if ((err as NodeJS.ErrnoException).code === 'EBADF') return;
+});
+
 import { env } from './config/env';
 import { logger } from './config/logger';
 import { connectDatabase, disconnectDatabase } from './infra/db';
@@ -15,8 +20,7 @@ async function bootstrap(): Promise<void> {
     try {
         await ensureStorageBucket();
     } catch (err) {
-        logger.fatal({ err }, 'Failed to initialize object storage');
-        process.exit(1);
+        logger.warn({ err }, 'Could not initialize object storage bucket on startup; will retry on demand');
     }
 
     const app = createApp();
